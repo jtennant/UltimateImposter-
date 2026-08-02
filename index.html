@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Imposter — pass-the-phone party game</title>
+<meta name="description" content="Offline pass-the-phone social deduction word game. One phone, 3–20 players, no server.">
+<meta name="theme-color" content="#0b0d17">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Imposter">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+:root{
+  --bg:#0b0d17; --bg2:#141830; --card:#191d38; --card2:#20254a;
+  --line:#2c3260; --txt:#eef0ff; --dim:#9aa1cc;
+  --acc:#7c5cff; --acc2:#00d4ff; --good:#22c55e; --bad:#ff4d6d; --warn:#ffb020;
+  --r:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html,body{height:100%}
+html{background:var(--bg)}
+body{
+  margin:0;background:radial-gradient(120% 80% at 50% 0%,#1b1f42 0%,var(--bg) 60%) fixed;
+  color:var(--txt);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  overscroll-behavior:none;
+}
+#app{
+  max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 16px);
+}
+.screen{display:none;flex:1;flex-direction:column;gap:14px;animation:in .18s ease}
+.screen.on{display:flex}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h1{font-size:34px;margin:0;letter-spacing:-.02em;font-weight:800}
+h2{font-size:21px;margin:0;font-weight:750;letter-spacing:-.01em}
+h3{font-size:14px;margin:0;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+p{margin:0;color:var(--dim)}
+.grow{flex:1}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px}
+.row{display:flex;gap:10px;align-items:center}
+.wrap{flex-wrap:wrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.stack{display:flex;flex-direction:column;gap:10px}
+button{font:inherit;color:inherit;font-weight:650;border:0;background:none;cursor:pointer}
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  padding:16px;border-radius:var(--r);background:var(--card2);border:1px solid var(--line);
+  font-size:17px;transition:transform .08s ease,filter .15s ease;user-select:none;touch-action:manipulation;
+}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:linear-gradient(135deg,var(--acc),#5b7cff);border-color:transparent;box-shadow:0 8px 24px -10px var(--acc)}
+.btn.ghost{background:transparent}
+.btn.sm{padding:11px 14px;font-size:15px;width:auto;border-radius:13px}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.4}
+.pill{
+  padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);
+  font-size:14px;font-weight:650;color:var(--dim);transition:.15s
+}
+.pill.on{background:rgba(124,92,255,.22);border-color:var(--acc);color:#fff}
+.stepper{display:flex;align-items:center;gap:14px}
+.stepper button{width:42px;height:42px;border-radius:12px;background:var(--card2);border:1px solid var(--line);font-size:22px;line-height:1}
+.stepper .val{min-width:44px;text-align:center;font-size:24px;font-weight:800}
+input[type=text]{
+  width:100%;padding:13px 14px;border-radius:13px;background:var(--bg2);
+  border:1px solid var(--line);color:var(--txt);font:inherit;font-weight:600
+}
+input[type=text]:focus{outline:2px solid var(--acc);outline-offset:-1px}
+.switch{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 14px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.switch small{display:block;color:var(--dim);font-weight:500;font-size:13px;margin-top:2px}
+.tog{width:52px;height:31px;border-radius:999px;background:var(--card2);border:1px solid var(--line);position:relative;flex:0 0 auto}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:23px;height:23px;border-radius:50%;background:var(--dim);transition:.18s}
+.tog.on{background:rgba(124,92,255,.35);border-color:var(--acc)}
+.tog.on::after{left:26px;background:#fff}
+.plist{display:flex;flex-direction:column;gap:8px;max-height:44vh;overflow:auto;-webkit-overflow-scrolling:touch}
+.prow{display:flex;gap:8px;align-items:center}
+.prow .num{width:26px;text-align:center;color:var(--dim);font-weight:800;font-size:13px;flex:0 0 auto}
+.prow .x{width:42px;height:47px;border-radius:12px;color:var(--dim);font-size:20px;flex:0 0 auto;border:1px solid var(--line)}
+.reveal{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  border-radius:26px;border:1px solid var(--line);background:linear-gradient(160deg,var(--card2),var(--card));
+  padding:26px;gap:14px;min-height:46vh;user-select:none;position:relative;overflow:hidden
+}
+.reveal.held{background:linear-gradient(160deg,#241a4d,#150f2e);border-color:var(--acc)}
+.reveal.imp{background:linear-gradient(160deg,#4a1027,#2a0a17);border-color:var(--bad)}
+.word{font-size:min(13vw,46px);font-weight:850;letter-spacing:-.02em;line-height:1.1}
+.big{font-size:min(11vw,40px);font-weight:850;letter-spacing:-.02em}
+.tag{font-size:13px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.timer{font-variant-numeric:tabular-nums;font-size:min(20vw,84px);font-weight:850;letter-spacing:-.03em}
+.timer.low{color:var(--warn)}
+.timer.done{color:var(--bad)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.grid .btn{padding:18px 10px;font-size:16px}
+.order{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.order span{padding:8px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:14px;font-weight:650}
+.order span.first{background:rgba(0,212,255,.15);border-color:var(--acc2);color:#fff}
+.out{opacity:.45;text-decoration:line-through}
+.score{display:flex;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--line);font-weight:650}
+.score:last-child{border:0}
+.banner{border-radius:var(--r);padding:16px;text-align:center;font-weight:800;font-size:20px}
+.banner.crew{background:rgba(34,197,94,.15);border:1px solid var(--good);color:#8df0b0}
+.banner.imp{background:rgba(255,77,109,.15);border:1px solid var(--bad);color:#ffa8ba}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.top h2{flex:1;text-align:center}
+.back{padding:8px 12px;border-radius:12px;border:1px solid var(--line);font-size:14px;color:var(--dim)}
+.muted{color:var(--dim);font-size:14px}
+.hint{font-size:14px;color:var(--dim);text-align:center}
+ol,ul{margin:0;padding-left:20px;color:var(--dim)}
+li{margin:6px 0}
+li b{color:var(--txt)}
+details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+summary{font-weight:700;cursor:pointer}
+.progress{height:5px;border-radius:99px;background:var(--card2);overflow:hidden}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .2s}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ HOME ============ -->
+  <section class="screen on" id="s-home">
+    <div class="grow center">
+      <div style="font-size:64px;line-height:1">🕵️</div>
+      <h1>Imposter</h1>
+      <p>One phone. Pass it round.<br>Everyone knows the word — except one of you.</p>
+    </div>
+    <div class="stack">
+      <button class="btn primary" data-go="setup">Play</button>
+      <button class="btn" data-go="rules">How to play</button>
+      <button class="btn ghost" data-go="scores">Scoreboard</button>
+    </div>
+    <p class="hint">Works fully offline · no server · no accounts</p>
+  </section>
+
+  <!-- ============ SETUP ============ -->
+  <section class="screen" id="s-setup">
+    <div class="top"><button class="back" data-go="home">‹ Back</button><h2>Set up</h2><span style="width:56px"></span></div>
+
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between">
+        <div><h3>Players</h3><p class="muted" id="pcount">4 players</p></div>
+        <div class="stepper">
+          <button id="pminus">−</button><span class="val" id="pval">4</span><button id="pplus">+</button>
+        </div>
+      </div>
+      <div class="plist" id="plist"></div>
+    </div>
+
+    <div class="card row" style="justify-content:space-between">
+      <div><h3>Imposters</h3><p class="muted" id="imphint">1 imposter</p></div>
+      <div class="stepper">
+        <button id="iminus">−</button><span class="val" id="ival">1</span><button id="iplus">+</button>
+      </div>
+    </div>
+
+    <div class="stack">
+      <h3>Game mode</h3>
+      <div class="row wrap" id="modes">
+        <button class="pill on" data-mode="classic">Classic</button>
+        <button class="pill" data-mode="blank">Blackout</button>
+        <button class="pill" data-mode="similar">Undercover</button>
+      </div>
+      <p class="muted" id="modedesc"></p>
+    </div>
+
+    <div class="stack">
+      <h3>Categories</h3>
+      <div class="row wrap" id="cats"></div>
+      <div class="row" style="gap:8px">
+        <button class="btn sm ghost" id="catall">All</button>
+        <button class="btn sm ghost" id="catnone">None</button>
+      </div>
+    </div>
+
+    <details>
+      <summary>Options</summary>
+      <div class="stack" style="margin-top:12px">
+        <div class="switch"><div>Category hint for imposter<small>Imposter sees the category, not the word</small></div><button class="tog on" data-opt="hint"></button></div>
+        <div class="switch"><div>Discussion timer<small id="timerlabel">90 seconds</small></div><button class="tog on" data-opt="timer"></button></div>
+        <div class="row" id="timerrow"><button class="pill" data-sec="45">45s</button><button class="pill on" data-sec="90">90s</button><button class="pill" data-sec="120">2m</button><button class="pill" data-sec="180">3m</button></div>
+        <div class="switch"><div>Random clue order<small>Shuffle who speaks first each round</small></div><button class="tog on" data-opt="shuffle"></button></div>
+        <div class="switch"><div>Keep score<small>Track wins across rounds</small></div><button class="tog on" data-opt="score"></button></div>
+      </div>
+    </details>
+
+    <div class="grow"></div>
+    <button class="btn primary" id="start">Deal roles</button>
+  </section>
+
+  <!-- ============ DEAL / REVEAL ============ -->
+  <section class="screen" id="s-deal">
+    <div class="progress"><i id="dealbar"></i></div>
+    <div class="reveal" id="revealcard">
+      <div class="tag" id="dealtag">Pass the phone to</div>
+      <div class="big" id="dealname">Player 1</div>
+      <p id="dealsub">Hold the button below when you're ready.<br>Don't let anyone else see.</p>
+    </div>
+    <button class="btn primary" id="holdbtn">Hold to reveal</button>
+    <button class="btn" id="nextplayer" style="display:none">Hide &amp; pass on →</button>
+  </section>
+
+  <!-- ============ PLAY ============ -->
+  <section class="screen" id="s-play">
+    <div class="top"><span style="width:56px"></span><h2>Give your clues</h2><button class="back" id="abort">End</button></div>
+    <div class="card stack">
+      <h3>Clue order</h3>
+      <div class="order" id="orderlist"></div>
+    </div>
+    <div class="grow center">
+      <div class="timer" id="timer">1:30</div>
+      <p class="hint" id="timerhint">One word each, in order. Then argue.</p>
+    </div>
+    <div class="row">
+      <button class="btn" id="tstart">Start timer</button>
+      <button class="btn ghost" id="treset">Reset</button>
+    </div>
+    <button class="btn primary" id="tovote">Go to vote</button>
+  </section>
+
+  <!-- ============ VOTE ============ -->
+  <section class="screen" id="s-vote">
+    <div class="top"><span style="width:56px"></span><h2>Who's the imposter?</h2><span style="width:56px"></span></div>
+    <p class="hint" id="votehint">Count votes out loud, then tap whoever gets the most.</p>
+    <div class="grid" id="votegrid"></div>
+    <div class="grow"></div>
+    <button class="btn ghost" id="novote">Nobody / can't agree</button>
+  </section>
+
+  <!-- ============ GUESS ============ -->
+  <section class="screen" id="s-guess">
+    <div class="grow center">
+      <div style="font-size:52px">🎯</div>
+      <h2 id="guesstitle">Caught!</h2>
+      <p id="guesssub">The imposter gets one shot at the secret word. Say it out loud now.</p>
+    </div>
+    <div class="stack">
+      <button class="btn" id="gright">They guessed it 😱</button>
+      <button class="btn primary" id="gwrong">Nope, wrong</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section class="screen" id="s-result">
+    <div class="banner" id="banner">Crew win!</div>
+    <div class="card center">
+      <div class="tag">The secret word was</div>
+      <div class="word" id="rword">Pizza</div>
+      <div class="muted" id="rcat">Food &amp; Drink</div>
+    </div>
+    <div class="card stack">
+      <h3>Roles</h3>
+      <div id="roles" class="stack"></div>
+    </div>
+    <div class="card stack" id="scorecard">
+      <h3>Scores</h3>
+      <div id="scorelist"></div>
+    </div>
+    <div class="grow"></div>
+    <button class="btn primary" id="again">Next round</button>
+    <button class="btn ghost" data-go="setup">Change settings</button>
+  </section>
+
+  <!-- ============ SCOREBOARD ============ -->
+  <section class="screen" id="s-scores">
+    <div class="top"><button class="back" data-go="home">‹ Back</button><h2>Scoreboard</h2><span style="width:56px"></span></div>
+    <div class="card stack"><div id="scorelist2"></div></div>
+    <div class="grow"></div>
+    <button class="btn ghost danger" id="clearscores">Reset scores</button>
+  </section>
+
+  <!-- ============ RULES ============ -->
+  <section class="screen" id="s-rules">
+    <div class="top"><button class="back" data-go="home">‹ Back</button><h2>How to play</h2><span style="width:56px"></span></div>
+    <div class="card stack">
+      <h3>The idea</h3>
+      <p>Everyone gets the same secret word — except the imposter, who's flying blind and has to fake it. Crew are hunting the faker; the imposter is hunting the word.</p>
+    </div>
+    <div class="card stack">
+      <h3>A round</h3>
+      <ol>
+        <li><b>Deal.</b> Pass the phone round. Each player holds to see their role in private, then passes on.</li>
+        <li><b>Clues.</b> In the order shown, everyone says <b>one word</b> about the secret word. No sentences, no spelling it, no rhymes, no "it's the thing we saw last week".</li>
+        <li><b>Discuss.</b> Argue about whose clue was too vague, too safe, or suspiciously perfect.</li>
+        <li><b>Vote.</b> On three, everyone points. Tap whoever got the most votes.</li>
+        <li><b>Last chance.</b> If the imposter is caught, they get one guess at the word. Nail it and they steal the win.</li>
+      </ol>
+    </div>
+    <div class="card stack">
+      <h3>Winning</h3>
+      <ul>
+        <li><b>Crew win</b> if they vote out every imposter and the imposter can't guess the word.</li>
+        <li><b>Imposter wins</b> by surviving the vote, <i>or</i> by guessing the secret word after being caught.</li>
+      </ul>
+    </div>
+    <div class="card stack">
+      <h3>Modes</h3>
+      <ul>
+        <li><b>Classic.</b> Imposter is told they're the imposter and sees the category as a hint.</li>
+        <li><b>Blackout.</b> Imposter gets nothing at all. Brutal.</li>
+        <li><b>Undercover.</b> Everyone gets a word, but the imposter's word is subtly different — and nobody is told who's who. You have to work out whether the odd one out is you.</li>
+      </ul>
+    </div>
+    <div class="card stack">
+      <h3>Good clue, bad clue</h3>
+      <p>Word is <b>Pizza</b>. Good: "Naples", "delivery", "slice". Too safe: "food" — it tells the crew nothing and screams imposter. Too good: "pepperoni" — you've just handed the imposter the word.</p>
+    </div>
+    <div class="card stack">
+      <h3>How many imposters</h3>
+      <ul><li>3–5 players: 1</li><li>6–8 players: 1–2</li><li>9+ players: 2–3</li></ul>
+    </div>
+  </section>
+
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ *  WORDS — grouped by category. In Undercover mode the imposter gets
+ *  another word from the same category, which makes it plausible.
+ * ------------------------------------------------------------------ */
+const WORDS = {
+  "Animals":["Elephant","Penguin","Octopus","Hedgehog","Kangaroo","Crocodile","Squirrel","Dolphin","Giraffe","Bat","Owl","Sloth","Wolf","Camel","Peacock","Snail","Shark","Frog","Horse","Chicken","Spider","Tiger","Seagull","Hamster","Bee","Rhino","Goat","Fox","Whale","Ant"],
+  "Food & Drink":["Pizza","Sushi","Pancake","Curry","Bacon","Avocado","Popcorn","Cheese","Espresso","Lasagne","Doughnut","Marmite","Mango","Porridge","Kebab","Ketchup","Roast dinner","Chewing gum","Champagne","Toastie","Olive","Chilli","Ice cream","Peanut butter","Pickle","Smoothie","Garlic bread","Custard","Noodles","Beer"],
+  "Places":["Airport","Library","Casino","Hospital","Beach","Prison","Zoo","Cinema","Petrol station","Church","Gym","Nightclub","Museum","Car park","Supermarket","Campsite","Ski resort","Barber shop","Hotel lobby","Farm","Space station","Cave","Roundabout","Launderette","Theme park","Attic","Bank","Motorway services","Rooftop","Dentist"],
+  "Jobs":["Firefighter","Chef","Astronaut","Plumber","Teacher","Referee","Lifeguard","Tattoo artist","Barista","Undertaker","Pilot","Bin man","Vet","Estate agent","Beekeeper","Bouncer","Lawyer","Farmer","DJ","Nurse","Detective","Postman","Magician","Scientist","Accountant","Lorry driver","Stunt double","Cleaner","Journalist","Builder"],
+  "Around the House":["Kettle","Toothbrush","Sofa","Radiator","Doorbell","Mirror","Hoover","Fridge","Toilet","Candle","Duvet","Washing machine","Remote control","Bin","Shed","Ironing board","Bookshelf","Fire alarm","Shower","Wardrobe","Doormat","Fairy lights","Freezer","Blender","Stairs","Curtains","Boiler","Clothes horse","Bath","Cupboard"],
+  "Travel":["Aeroplane","Suitcase","Passport","Ferry","Caravan","Hot air balloon","Sunburn","Motorbike","Taxi","Train station","Rucksack","Cable car","Cruise ship","Bicycle","Hostel","Duty free","Tent","Roadtrip","Helicopter","Bus","Submarine","Skateboard","Postcard","Hire car","Tram","Border control","Jet ski","Hitchhiking","Sat nav","Canoe"],
+  "Sport":["Football","Boxing","Golf","Marathon","Chess","Darts","Surfing","Gymnastics","Formula 1","Cricket","Snooker","Skiing","Sumo","Tennis","Rugby","Bowling","Swimming","Ice hockey","Archery","Cycling","Basketball","Fencing","Climbing","Wrestling","Table tennis","Horse racing","Netball","Skateboarding","Rowing","Curling"],
+  "Film & TV":["Titanic","Jurassic Park","The Lion King","Star Wars","Harry Potter","Friends","Breaking Bad","The Office","Jaws","Shrek","Home Alone","The Matrix","Game of Thrones","Toy Story","Rocky","Frozen","James Bond","Stranger Things","The Simpsons","Love Island","Gladiator","Finding Nemo","Squid Game","Mamma Mia","The Godfather","Grease","Doctor Who","Bake Off","Avatar","Peaky Blinders"],
+  "Music":["Guitar","Karaoke","Drum kit","Opera","Bagpipes","Festival","Choir","Vinyl","Rap battle","Violin","Headphones","Piano","Encore","Ukulele","Air guitar","Saxophone","Boy band","Busker","Eurovision","Trumpet","Rave","Lullaby","Harmonica","National anthem","Jazz","Beatbox","Cello","Ringtone","Kazoo","Mosh pit"],
+  "Technology":["Smartphone","Wi-Fi","Robot","Drone","Password","Bluetooth","Printer","Selfie","Video call","Emoji","Barcode","Satellite","Charger","Spam email","Firewall","Keyboard","3D printer","Autocorrect","Smartwatch","Cloud storage","VR headset","Search engine","Software update","Group chat","Screenshot","Algorithm","Battery","Hard drive","Livestream","Vending machine"],
+  "Nature":["Thunderstorm","Rainbow","Volcano","Desert","Snowflake","Waterfall","Earthquake","Forest","Tornado","Moon","Iceberg","Sunrise","Fog","Coral reef","Mud","Lightning","Cactus","Swamp","Hurricane","Glacier","Puddle","Eclipse","Mountain","Heatwave","Autumn leaves","Tide","Cliff","Quicksand","Meteor","Wildfire"],
+  "School":["Homework","Detention","Exam","Assembly","Whiteboard","Playground","Head teacher","Sports day","School bus","Textbook","Cafeteria","Calculator","Ruler","Fire drill","Nativity play","Register","Lockers","Chemistry lab","Uniform","Report card","Field trip","Prom","Bell","Glue stick","Nickname","Graduation","Substitute teacher","Bunking off","Recorder","Parents' evening"],
+  "Body & Health":["Sneeze","Hiccups","Nightmare","Yawn","Sunburn","Broken arm","Dentist drill","Six pack","Snoring","Hangover","Goosebumps","Bruise","Plaster","Toothache","Sweat","Blister","Heartbeat","Tickling","Growth spurt","Freckles","Bad breath","Cramp","Injection","Eyebrows","Belly button","X-ray","Contact lens","Braces","Pins and needles","Cough"],
+  "Clothes":["Wellies","Bow tie","Onesie","Wedding dress","Flip flops","Hoodie","Sunglasses","High heels","Christmas jumper","Socks","Fancy dress","Scarf","Bikini","Suit","Apron","Baseball cap","Handbag","Pyjamas","Football kit","Leather jacket","Crocs","Watch","Dungarees","Gloves","Uniform","Wedding ring","Trainers","Kilt","Raincoat","Beanie"],
+  "Occasions":["Wedding","Birthday","Christmas","Halloween","Funeral","New Year's Eve","Job interview","First date","Baby shower","Barbecue","Sleepover","House party","Graduation","Camping trip","Bonfire night","Easter","Stag do","Pub quiz","Family reunion","Moving house","Retirement","Valentine's Day","Christening","Speed dating","Boxing Day","Road trip","Housewarming","Reunion","Anniversary","Picnic"],
+  "Famous People":["Elvis","Cleopatra","Shakespeare","Einstein","Beyoncé","Napoleon","David Attenborough","Mona Lisa","Julius Caesar","The Queen","Michael Jackson","Mozart","Gordon Ramsay","Da Vinci","Marilyn Monroe","Usain Bolt","Charlie Chaplin","Freddie Mercury","Sherlock Holmes","Santa Claus","Dracula","Robin Hood","Mr Bean","Darth Vader","Superman","James Bond","Willy Wonka","Batman","Mario","Homer Simpson"],
+  "Random Everyday":["Traffic jam","Queue","Alarm clock","Small talk","Paper cut","Lost keys","Rain on a Monday","Group photo","Awkward silence","Photocopier","Parking ticket","Wrong number","Loyalty card","Tupperware","Shopping trolley","Umbrella","Sat nav","Receipt","Bubble wrap","Selfie stick","Chewed pen","Escalator","Revolving door","Speed bump","Spare change","Tangled headphones","Wet paint","Fire exit","Spam call","Loose thread"],
+  "Easy (kids)":["Dog","Rainbow","Cake","Snowman","Balloon","Pirate","Dinosaur","Bicycle","Beach","Chocolate","Fireworks","Bubble","Teddy bear","Slide","Puppy","Robot","Wizard","Football","Ice cream","Castle","Monster","Rocket","Butterfly","Swimming pool","Birthday","Kite","Tree house","Superhero","Sandcastle","Mermaid"]
+};
+
+const MODE_DESC = {
+  classic:"Imposter knows they're the imposter and sees the category. The standard game.",
+  blank:"Imposter gets no word and no hint. Pure improvisation — hardest mode for the faker.",
+  similar:"Everyone gets a word, but the imposter's is subtly different — and nobody is told who they are. Paranoia mode."
+};
+
+/* ------------------------------------------------------------------ *
+ *  STATE
+ * ------------------------------------------------------------------ */
+const KEY = "imposter.v1";
+const S = Object.assign({
+  players:["Player 1","Player 2","Player 3","Player 4"],
+  imposters:1,
+  mode:"classic",
+  cats:Object.keys(WORDS),
+  opt:{hint:true,timer:true,shuffle:true,score:true},
+  seconds:90,
+  scores:{},
+  used:[]
+}, load());
+
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+let R = null;   // current round
+let tick = null, left = 0;
+
+/* ------------------------------------------------------------------ *
+ *  HELPERS
+ * ------------------------------------------------------------------ */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const rnd = n => Math.floor(Math.random()*n);
+const pick = a => a[rnd(a.length)];
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function go(name){
+  $$(".screen").forEach(s=>s.classList.toggle("on", s.id==="s-"+name));
+  window.scrollTo(0,0);
+}
+$$("[data-go]").forEach(b=>b.onclick=()=>{ const t=b.dataset.go; if(t==="setup")renderSetup(); if(t==="scores")renderScores("#scorelist2"); go(t); });
+
+function beep(){
+  try{
+    const c=new (window.AudioContext||window.webkitAudioContext)();
+    const o=c.createOscillator(), g=c.createGain();
+    o.connect(g); g.connect(c.destination); o.type="sine"; o.frequency.value=880;
+    g.gain.setValueAtTime(.001,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(.35,c.currentTime+.02);
+    g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.9);
+    o.start(); o.stop(c.currentTime+1);
+  }catch(e){}
+}
+function buzz(ms){ try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} }
+
+let wake=null;
+async function keepAwake(on){
+  try{
+    if(on && "wakeLock" in navigator && !wake) wake = await navigator.wakeLock.request("screen");
+    if(!on && wake){ wake.release(); wake=null; }
+  }catch(e){}
+}
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && $("#s-play").classList.contains("on")) keepAwake(true); });
+
+/* ------------------------------------------------------------------ *
+ *  SETUP SCREEN
+ * ------------------------------------------------------------------ */
+function maxImposters(){ return Math.max(1, Math.min(3, Math.floor((S.players.length-1)/2))); }
+
+function renderSetup(){
+  $("#pval").textContent = S.players.length;
+  $("#pcount").textContent = S.players.length + " players";
+  const list = $("#plist"); list.innerHTML = "";
+  S.players.forEach((n,i)=>{
+    const row=document.createElement("div"); row.className="prow";
+    const num=document.createElement("span"); num.className="num"; num.textContent=i+1;
+    const inp=document.createElement("input"); inp.type="text"; inp.value=n; inp.maxLength=18;
+    inp.oninput=()=>{ S.players[i]=inp.value; save(); };
+    inp.onblur =()=>{ if(!inp.value.trim()){ inp.value="Player "+(i+1); S.players[i]=inp.value; save(); } };
+    const x=document.createElement("button"); x.className="x"; x.textContent="×";
+    x.onclick=()=>{ if(S.players.length>3){ S.players.splice(i,1); clampImposters(); save(); renderSetup(); } };
+    row.append(num,inp,x); list.append(row);
+  });
+
+  S.imposters = Math.min(S.imposters, maxImposters());
+  $("#ival").textContent = S.imposters;
+  $("#imphint").textContent = S.imposters===1 ? "1 imposter" : S.imposters+" imposters";
+
+  $$("#modes .pill").forEach(p=>p.classList.toggle("on", p.dataset.mode===S.mode));
+  $("#modedesc").textContent = MODE_DESC[S.mode];
+
+  const cats=$("#cats"); cats.innerHTML="";
+  Object.keys(WORDS).forEach(c=>{
+    const b=document.createElement("button");
+    b.className="pill"+(S.cats.includes(c)?" on":""); b.textContent=c;
+    b.onclick=()=>{
+      S.cats = S.cats.includes(c) ? S.cats.filter(x=>x!==c) : S.cats.concat(c);
+      save(); renderSetup();
+    };
+    cats.append(b);
+  });
+
+  $$("[data-opt]").forEach(t=>t.classList.toggle("on", !!S.opt[t.dataset.opt]));
+  $$("[data-sec]").forEach(p=>p.classList.toggle("on", +p.dataset.sec===S.seconds));
+  $("#timerlabel").textContent = S.seconds<60 ? S.seconds+" seconds" : (S.seconds/60)+" minute"+(S.seconds>60?"s":"");
+  $("#timerrow").style.display = S.opt.timer ? "flex" : "none";
+  $("#start").disabled = S.cats.length===0;
+  $("#start").textContent = S.cats.length===0 ? "Pick at least one category" : "Deal roles";
+}
+function clampImposters(){ S.imposters = Math.max(1, Math.min(S.imposters, maxImposters())); }
+
+$("#pplus").onclick=()=>{ if(S.players.length<20){ S.players.push("Player "+(S.players.length+1)); save(); renderSetup(); } };
+$("#pminus").onclick=()=>{ if(S.players.length>3){ S.players.pop(); clampImposters(); save(); renderSetup(); } };
+$("#iplus").onclick=()=>{ if(S.imposters<maxImposters()){ S.imposters++; save(); renderSetup(); } };
+$("#iminus").onclick=()=>{ if(S.imposters>1){ S.imposters--; save(); renderSetup(); } };
+$("#modes").onclick=e=>{ const b=e.target.closest("[data-mode]"); if(b){ S.mode=b.dataset.mode; save(); renderSetup(); } };
+$("#catall").onclick=()=>{ S.cats=Object.keys(WORDS); save(); renderSetup(); };
+$("#catnone").onclick=()=>{ S.cats=[]; save(); renderSetup(); };
+$$("[data-opt]").forEach(t=>t.onclick=()=>{ S.opt[t.dataset.opt]=!S.opt[t.dataset.opt]; save(); renderSetup(); });
+$$("[data-sec]").forEach(p=>p.onclick=()=>{ S.seconds=+p.dataset.sec; save(); renderSetup(); });
+
+/* ------------------------------------------------------------------ *
+ *  ROUND SET-UP
+ * ------------------------------------------------------------------ */
+function drawWord(){
+  const pool=[];
+  S.cats.forEach(c=> WORDS[c].forEach(w=> pool.push([c,w])));
+  let fresh = pool.filter(([c,w])=> !S.used.includes(c+"|"+w));
+  if(!fresh.length){ S.used=[]; fresh=pool; }
+  const [cat,word]=pick(fresh);
+  S.used.push(cat+"|"+word);
+  if(S.used.length>400) S.used=S.used.slice(-200);
+  save();
+  return {cat,word};
+}
+
+function startRound(){
+  const {cat,word}=drawWord();
+  const idx=shuffle(S.players.map((_,i)=>i)).slice(0,S.imposters);
+  let decoy=null;
+  if(S.mode==="similar"){
+    const others=WORDS[cat].filter(w=>w!==word);
+    decoy = others.length ? pick(others) : word;
+  }
+  R={ word, cat, decoy, imps:idx, order:S.opt.shuffle?shuffle(S.players.map((_,i)=>i)):S.players.map((_,i)=>i),
+      seat:0, out:[], caught:0, winner:null };
+  renderDeal();
+  go("deal");
+}
+$("#start").onclick=startRound;
+
+/* ------------------------------------------------------------------ *
+ *  DEAL / REVEAL
+ * ------------------------------------------------------------------ */
+function renderDeal(){
+  const card=$("#revealcard");
+  card.className="reveal";
+  $("#dealbar").style.width = (R.seat/S.players.length*100)+"%";
+  $("#dealtag").textContent = R.seat===0 ? "Phone starts with" : "Pass the phone to";
+  $("#dealname").textContent = S.players[R.seat];
+  $("#dealname").className = "big";
+  $("#dealsub").innerHTML = "Hold the button below when nobody's looking.";
+  $("#holdbtn").style.display="flex";
+  $("#nextplayer").style.display="none";
+}
+
+function showRole(){
+  const i=R.seat, isImp=R.imps.includes(i), card=$("#revealcard");
+  card.classList.add("held");
+  $("#dealtag").textContent = S.players[i];
+  const name=$("#dealname"), sub=$("#dealsub");
+  if(S.mode==="similar"){
+    name.className="word"; name.textContent = isImp ? R.decoy : R.word;
+    card.classList.remove("imp");
+    sub.textContent = "Someone in this room has a different word. It might be you.";
+  } else if(isImp){
+    card.classList.add("imp");
+    name.className="big"; name.textContent="YOU ARE THE IMPOSTER";
+    sub.innerHTML = S.mode==="classic" && S.opt.hint
+      ? "Category: <b>"+R.cat+"</b><br>Bluff a clue. Work out the word."
+      : "No word. No hint. Good luck.";
+  } else {
+    card.classList.remove("imp");
+    name.className="word"; name.textContent=R.word;
+    sub.textContent = S.imposters===1 ? "One of you doesn't know this." : S.imposters+" of you don't know this.";
+  }
+}
+function hideRole(){
+  const card=$("#revealcard");
+  card.classList.remove("held","imp");
+  $("#dealtag").textContent="Seen it?";
+  $("#dealname").className="big"; $("#dealname").textContent=S.players[R.seat];
+  $("#dealsub").textContent="Hidden. Pass the phone on.";
+  $("#holdbtn").style.display="none";
+  $("#nextplayer").style.display="flex";
+  $("#nextplayer").textContent = R.seat < S.players.length-1
+    ? "Pass to "+S.players[R.seat+1]+" →" : "Everyone's ready →";
+}
+
+const hold=$("#holdbtn");
+let holding=false;
+function down(e){ e.preventDefault(); if(holding) return; holding=true; buzz(15); showRole(); }
+function up(){ if(!holding) return; holding=false; hideRole(); }
+hold.addEventListener("pointerdown",down);
+["pointerup","pointercancel","pointerleave"].forEach(ev=>hold.addEventListener(ev,up));
+hold.addEventListener("contextmenu",e=>e.preventDefault());
+
+$("#nextplayer").onclick=()=>{
+  R.seat++;
+  if(R.seat>=S.players.length){ renderPlay(); go("play"); }
+  else renderDeal();
+};
+
+/* ------------------------------------------------------------------ *
+ *  PLAY + TIMER
+ * ------------------------------------------------------------------ */
+function renderPlay(){
+  const ol=$("#orderlist"); ol.innerHTML="";
+  R.order.forEach((p,n)=>{
+    const s=document.createElement("span");
+    s.textContent=(n+1)+". "+S.players[p];
+    if(n===0) s.className="first";
+    ol.append(s);
+  });
+  stopTimer(); left=S.seconds; paintTimer();
+  const on=S.opt.timer;
+  $("#timer").style.display = on?"block":"none";
+  $("#tstart").style.display = on?"flex":"none";
+  $("#treset").style.display = on?"flex":"none";
+  $("#timerhint").textContent = S.players[R.order[0]]+" starts. One word each, going round.";
+  keepAwake(true);
+}
+function paintTimer(){
+  const m=Math.floor(left/60), s=left%60;
+  const t=$("#timer");
+  t.textContent = m+":"+String(s).padStart(2,"0");
+  t.className = "timer"+(left===0?" done":left<=10?" low":"");
+}
+function stopTimer(){ if(tick){ clearInterval(tick); tick=null; } $("#tstart").textContent="Start timer"; }
+$("#tstart").onclick=()=>{
+  if(tick){ stopTimer(); return; }
+  if(left<=0) left=S.seconds;
+  $("#tstart").textContent="Pause";
+  tick=setInterval(()=>{
+    left--; paintTimer();
+    if(left<=0){ stopTimer(); beep(); buzz([200,100,200]); $("#timerhint").textContent="Time's up — vote!"; }
+  },1000);
+};
+$("#treset").onclick=()=>{ stopTimer(); left=S.seconds; paintTimer(); };
+$("#abort").onclick=()=>{ stopTimer(); keepAwake(false); go("home"); };
+$("#tovote").onclick=()=>{ stopTimer(); renderVote(); go("vote"); };
+
+/* ------------------------------------------------------------------ *
+ *  VOTING
+ * ------------------------------------------------------------------ */
+function renderVote(){
+  const g=$("#votegrid"); g.innerHTML="";
+  S.players.forEach((n,i)=>{
+    const b=document.createElement("button");
+    b.className="btn"+(R.out.includes(i)?" out":"");
+    b.textContent=n; b.disabled=R.out.includes(i);
+    b.onclick=()=>voteOut(i);
+    g.append(b);
+  });
+  const left=R.imps.length-R.caught;
+  $("#votehint").textContent = R.out.length===0
+    ? "Count votes out loud, then tap whoever got the most."
+    : (left>1 ? left+" imposters still among you. Vote again." : "One imposter still among you. Vote again.");
+}
+
+function voteOut(i){
+  R.out.push(i);
+  if(R.imps.includes(i)){
+    R.caught++;
+    if(R.caught===R.imps.length){
+      if(S.mode==="similar"){ finish("crew"); }       // no word to guess — imposter had one
+      else {
+        $("#guesstitle").textContent = R.imps.length>1 ? "All imposters caught!" : "Caught!";
+        $("#guesssub").textContent = "Last chance: the imposter says the secret word out loud now. Guess it right and they steal the win.";
+        go("guess");
+      }
+    } else {
+      renderVote();   // right call, but there's another one
+    }
+  } else {
+    finish("imp");    // civilian voted out — imposters survive
+  }
+}
+$("#novote").onclick=()=>finish("imp");
+$("#gright").onclick=()=>finish("imp",true);
+$("#gwrong").onclick=()=>finish("crew");
+
+/* ------------------------------------------------------------------ *
+ *  RESULT
+ * ------------------------------------------------------------------ */
+function finish(winner,stolen){
+  R.winner=winner;
+  if(S.opt.score){
+    S.players.forEach((n,i)=>{
+      const isImp=R.imps.includes(i);
+      if((winner==="imp")===isImp) S.scores[n]=(S.scores[n]||0)+1;
+    });
+    save();
+  }
+  const b=$("#banner");
+  b.className="banner "+(winner==="crew"?"crew":"imp");
+  b.textContent = winner==="crew"
+    ? "Crew win! 🎉"
+    : stolen ? "Imposter guessed the word! 😱"
+    : R.out.length && !R.imps.includes(R.out[R.out.length-1]) ? "Imposter wins — wrong person! 🔪"
+    : "Imposter survives! 🔪";
+
+  $("#rword").textContent = R.word;
+  $("#rcat").textContent  = R.cat + (S.mode==="similar" ? " · imposter had “"+R.decoy+"”" : "");
+
+  const rl=$("#roles"); rl.innerHTML="";
+  S.players.forEach((n,i)=>{
+    const d=document.createElement("div"); d.className="score";
+    const isImp=R.imps.includes(i);
+    d.innerHTML = "<span>"+esc(n)+(R.out.includes(i)?" <span class='muted'>(voted out)</span>":"")+"</span>"+
+                  "<b style='color:"+(isImp?"var(--bad)":"var(--dim)")+"'>"+(isImp?"IMPOSTER":"crew")+"</b>";
+    rl.append(d);
+  });
+
+  $("#scorecard").style.display = S.opt.score?"flex":"none";
+  if(S.opt.score) renderScores("#scorelist");
+  keepAwake(false);
+  go("result");
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function renderScores(sel){
+  const el=$(sel); el.innerHTML="";
+  const rows=S.players.map(n=>[n,S.scores[n]||0]).sort((a,b)=>b[1]-a[1]);
+  if(!rows.length){ el.innerHTML="<p class='muted'>No players yet.</p>"; return; }
+  rows.forEach(([n,v],i)=>{
+    const d=document.createElement("div"); d.className="score";
+    d.innerHTML="<span>"+(i===0&&v>0?"👑 ":"")+esc(n)+"</span><b>"+v+"</b>";
+    el.append(d);
+  });
+}
+$("#again").onclick=startRound;
+$("#clearscores").onclick=()=>{ S.scores={}; save(); renderScores("#scorelist2"); };
+
+/* ------------------------------------------------------------------ *
+ *  BOOT
+ * ------------------------------------------------------------------ */
+renderSetup();
+if(location.protocol.startsWith("http") && "serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+</script>
+</body>
+</html>
