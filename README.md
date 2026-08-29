@@ -41,7 +41,7 @@ The game only works if clues are honest-but-oblique. Banned: synonyms, definitio
 |---|---|---|
 | **Classic** | A secret word | "You are the imposter", plus whatever hint level you've set |
 | **Undercover** | A word | A *different* word from the same category — and **nobody is told who they are** |
-| **GIF** | An animated GIF (116 ship with the app) | The GIF's tag, or nothing |
+| **GIF** | An animated GIF (181 ship with the app) | The GIF's tag, or nothing |
 
 Undercover has no final guess (the imposter had a word all along), so catching them ends it. It's the paranoia mode — you spend the round working out whether the odd one out is you.
 
@@ -68,11 +68,25 @@ Conventional play, if you want it: 3–5 players → 1, 6–8 → 1–2, 9+ → 
 
 Crew see a GIF and give clues about the picture; the imposter gets its tag (or nothing) and has to bluff a reaction to an image they've never seen.
 
-**116 GIFs ship with the app**, so the mode works the moment you open it — no key, no account, no network. They're in `gifs/`, about 3 MB in total, and the service worker caches them on install so they're there in a field with no signal.
+**181 GIFs ship with the app** across two packs, so the mode works the moment you open it — no key, no account, no network. They're in `gifs/`, about 9 MB in total, and the service worker caches them on install so they're there in a field with no signal. Either pack can be switched off in the pack manager.
 
-They are *generated*, not collected. `tools/make-gifs.py` draws every one of them from shapes — a rocket lifting off, a moon running through its phases, a washing machine turning, a comet, a snail, a spinning top — and each has a one-word-ish tag that the game uses. That decision is deliberate: pulling a hundred real reaction GIFs would mean an API key and a network at play time, and shipping them in the repo would mean shipping a hundred other people's copyrights. Generated art costs neither, comes to ~28 KB each, and is reproducible — rerun the script and you get the same pack.
+### The drawn pack
+
+116 of them are *generated*, not collected. `tools/make-gifs.py` draws every one from shapes — a rocket lifting off, a moon running through its phases, a washing machine turning, a comet, a snail, a spinning top — and each has a one-word-ish tag that the game uses. That decision is deliberate: pulling a hundred real reaction GIFs would mean an API key and a network at play time, and shipping them in the repo would mean shipping a hundred other people's copyrights. Generated art costs neither, comes to ~28 KB each, and is reproducible — rerun the script and you get the same pack.
 
 They're clean flat animations rather than meme reactions, which changes the flavour of clues a little: you're describing a *thing*, not a situation. In play that works out much like the word game, with the picture doing the work of the category.
+
+### Real GIFs from Wikimedia Commons
+
+The other 65 are genuine footage — photographed and filmed animations, not drawings: a sleeping cat, a geyser going off, the northern lights, a riffle shuffle, a printing press, the moon running through its phases. They come from [Wikimedia Commons](https://commons.wikimedia.org), harvested by `tools/fetch-gifs.py`.
+
+Commons is the source for a specific reason: **it needs no API key, and it actually licenses you to redistribute what you download.** Giphy and Tenor both require a key you'd have to obtain and embed, and neither grants any right to ship their content inside an app. Everything kept here is public domain or under a CC licence that permits reuse; the harvester drops anything else at the search stage, and every file's author, licence and source page are recorded in `gifs/real/CREDITS.md`, listed in the app's pack manager, and shown on the result screen when that GIF has been played.
+
+Originals are often several MB, so the harvester takes Commons' own 250px thumbnails (which stay animated, and are what Wikimedia asks bulk consumers to use instead of hammering the originals) and re-encodes each down to the app's size. That's a derivative work, which every licence used here allows, with attribution carried through.
+
+The scan collects several hundred candidates; the keep list in `tools/keep.json` is hand-curated from contact sheets, because a search for "snail" will cheerfully return a yellow arrow, and a diagram of a pendulum's phase space is no fun to give clues about.
+
+Two packs, then, and you can run either or both: **Drawn** for clean flat animations, **Real GIFs** for the real thing.
 
 ### Adding your own
 
@@ -116,16 +130,26 @@ python3 -m http.server 8000    # then http://localhost:8000
 
 Bumping `CACHE` in `sw.js` forces installed clients to pick up new assets.
 
-Regenerating the GIF pack (only needed if you edit or add a scene):
+Regenerating the drawn pack (only needed if you edit or add a scene):
 
 ```bash
 pip install pillow
 python3 tools/make-gifs.py
 ```
 
-It rewrites `gifs/`, prunes files whose scene was renamed or removed, and inlines the new listing into `index.html` between the `PACK:start` / `PACK:end` markers — the app reads that inline list rather than fetching `index.json`, because `fetch()` of a local file is blocked on `file://`. To add a scene, write a function decorated with `@scene("its tag")` that draws into a unit-square canvas; the helpers for circles, polygons, rounded rectangles, rotation, clouds, flames and sparkles are at the top of the file.
+Re-harvesting the real pack (only needed to add or replace GIFs):
 
-The browser test suite (`test/game.test.js`) serves the app over http and drives real rounds in Chromium — the reveal interaction, all three modes, every hint level, zero/some/all imposters, the secret-number distribution, multi-imposter elimination, every win path, the built-in GIF pack (every file fetched and checked it's a real GIF that renders), user GIFs stored/renamed/deleted/surviving a reload, settings migration, input guards, and 400 simulated deals checked for role integrity. 153 checks:
+```bash
+python3 tools/fetch-gifs.py --scan     # search Commons -> tools/candidates.json
+python3 tools/fetch-gifs.py --fetch    # download + re-encode tools/keep.json
+python3 tools/fetch-gifs.py --sheet    # contact sheets, for deciding what to cut
+```
+
+`--fetch` caches each download beside its output, so trimming `keep.json` and re-running only re-encodes; it also deletes files you've cut and rewrites `CREDITS.md`.
+
+Both scripts rewrite their folder, prune files whose entry was renamed or removed, and inline the new listing into `index.html` between the `PACK:start`/`PACK:end` and `REAL:start`/`REAL:end` markers — the app reads that inline list rather than fetching `index.json`, because `fetch()` of a local file is blocked on `file://`. To add a scene, write a function decorated with `@scene("its tag")` that draws into a unit-square canvas; the helpers for circles, polygons, rounded rectangles, rotation, clouds, flames and sparkles are at the top of the file.
+
+The browser test suite (`test/game.test.js`) serves the app over http and drives real rounds in Chromium — the reveal interaction, all three modes, every hint level, zero/some/all imposters, the secret-number distribution, multi-imposter elimination, every win path, the drawn pack (every file fetched and checked it's a real GIF that renders), the real pack (every file fetched, every licence checked as reuse-permitting, attribution reaching the result screen), user GIFs stored/renamed/deleted/surviving a reload, settings migration, input guards, and 400 simulated deals checked for role integrity. 170 checks:
 
 ```bash
 npm install playwright-core

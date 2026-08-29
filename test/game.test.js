@@ -127,7 +127,7 @@ const server = http.createServer((req, res) => {
   await page.click('#revealbtn');
   ok('tap reveals', (await page.textContent('#dealtag')) === 'Player 1');
   ok('countdown bar visible', await page.isVisible('#countdown'));
-  ok('seconds remaining shown', /^[0-9]+$/.test((await page.textContent('#secs')).trim()), await page.textContent('#secs'));
+  ok('seconds remaining shown immediately', /^[0-9]+$/.test((await page.textContent('#secs')).trim()), await page.textContent('#secs'));
   ok('hide is locked briefly so a stray tap cannot skip it', await page.$eval('#revealbtn', b => b.disabled));
   await page.waitForTimeout(700);
   ok('hide unlocks after the lock window', !(await page.$eval('#revealbtn', b => b.disabled)));
@@ -286,6 +286,73 @@ const server = http.createServer((req, res) => {
   });
   ok('every built-in GIF file exists and is a real GIF', missing.length === 0, missing.slice(0, 5));
 
+  console.log('\n-- real GIFs from Wikimedia Commons --');
+  const real = await page.evaluate(() => ({
+    n: REAL.length,
+    complete: REAL.filter(g => !(g.f && g.t && g.l && g.c)).map(g => g.f),
+    badLicence: REAL.filter(g => !/^(cc0|cc by|pd|public domain|attribution|copyrighted free use|no restrictions|fal)/i.test(g.l)).map(g => g.l),
+    dupTags: REAL.length - new Set(REAL.map(g => g.t)).size
+  }));
+  ok('real pack is inlined', real.n >= 50, real.n);
+  ok('every real GIF carries author, licence and source', real.complete.length === 0, real.complete);
+  ok('every licence permits reuse', real.badLicence.length === 0, real.badLicence);
+  ok('real tags are unique within the pack', real.dupTags === 0, real.dupTags);
+  // The two packs may share a tag (both have "fireworks") — that is fine as an
+  // answer, but the shortlist hint must never offer the same word twice.
+  const dupShortlist = await page.evaluate(() => {
+    const bad = [];
+    S.mode = 'gif'; S.hint = 'shortlist';
+    for (let i = 0; i < 300; i++) {
+      startRound();
+      const list = hintHTML().replace(/<[^>]*>/g, '').replace('One of these: ', '').split(' · ');
+      if (new Set(list).size !== list.length) bad.push(list.join('|'));
+    }
+    renderSetup(); go('setup');
+    return [...new Set(bad)].slice(0, 3);
+  });
+  ok('shortlist never repeats a tag across 300 rounds', dupShortlist.length === 0, dupShortlist);
+
+  const missingReal = await page.evaluate(async () => {
+    const bad = [];
+    for (const g of REAL) {
+      const r = await fetch('gifs/real/' + g.f);
+      if (!r.ok) { bad.push(g.f); continue; }
+      const b = await r.blob();
+      if (b.type !== 'image/gif' || b.size < 500) bad.push(g.f + ':' + b.size);
+    }
+    return bad;
+  });
+  ok('every real GIF file exists and is a real GIF', missingReal.length === 0, missingReal.slice(0, 5));
+  ok('pool is drawn + real', await page.evaluate(() => gifPool().length) === pack.n + real.n);
+
+  // attribution has to reach the screen, not just the file
+  await page.evaluate(() => { S.opt.builtin = false; save(); });     // real GIFs only
+  await setImposters(1);
+  await page.click('[data-hint="category"]');
+  await page.click('#start');
+  seen = await deal(4);
+  const realRound = await page.evaluate(() => R.gif.credit);
+  ok('a real GIF was dealt', !!realRound, realRound);
+  await page.click('#tovote');
+  await page.click(`#votegrid button:text-is("${impsOf(seen)[0].name}")`);
+  await page.click('#gwrong');
+  const creditText = await page.textContent('#rcredit');
+  ok('result credits the author', creditText.includes(realRound.a || 'unknown'), creditText);
+  ok('result names the licence', creditText.includes(realRound.l), creditText);
+  ok('result links to Commons', (await page.getAttribute('#rcredit a', 'href')).startsWith('https://commons.wikimedia.org/wiki/File:'),
+    await page.getAttribute('#rcredit a', 'href'));
+
+  await toSetup();
+  await page.click('[data-go="gifs"]');
+  ok('manager lists every credit', (await page.$$('#credits .score')).length === real.n);
+  await page.click('[data-opt="real"]');
+  ok('real pack can be switched off', await page.evaluate(() => gifPool().length) === 0, await page.evaluate(() => gifPool().length));
+  await page.click('[data-opt="real"]');
+  await page.click('[data-opt="builtin"]');
+  ok('both packs back on', await page.evaluate(() => gifPool().length) === pack.n + real.n);
+  await page.click('#gifback');
+
+  console.log('\n-- a GIF round end to end --');
   await setImposters(1);
   await page.click('[data-hint="category"]');
   await page.click('#start');
@@ -348,16 +415,18 @@ const server = http.createServer((req, res) => {
     return { user: GIFS.length, pool: gifPool().length };
   }, GIF_B64);
   ok('5 user GIFs stored', added.user === 5, added);
-  ok('pool is built-ins plus the user\'s own', added.pool === pack.n + 5, added);
+  ok('pool is built-ins plus the user\'s own', added.pool === pack.n + real.n + 5, added);
   ok('setup counts both', (await page.textContent('#gifcount')).includes('5 of your own'), await page.textContent('#gifcount'));
 
   // built-ins can be switched off to play with only your own
   await page.click('[data-go="gifs"]');
   await page.click('[data-opt="builtin"]');
-  ok('built-ins off leaves only the user pack',
+  await page.click('[data-opt="real"]');
+  ok('both built-in packs off leaves only the user pack',
     await page.evaluate(() => gifPool().length) === 5, await page.evaluate(() => gifPool().length));
   await page.click('[data-opt="builtin"]');
-  ok('built-ins back on', await page.evaluate(() => gifPool().length) === pack.n + 5);
+  await page.click('[data-opt="real"]');
+  ok('built-ins back on', await page.evaluate(() => gifPool().length) === pack.n + real.n + 5);
   await page.click('#gifback');
 
   console.log('\n== 8. GIF pack manager ==');

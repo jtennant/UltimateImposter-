@@ -107,6 +107,11 @@ input[type=text]:focus{outline:2px solid var(--acc);outline-offset:-1px}
 .strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
 .strip img{width:74px;height:74px;flex:0 0 auto;border-radius:11px;border:1px solid var(--line)}
 .warn{color:var(--warn);font-size:14px}
+.credit{font-size:12px;color:var(--dim);line-height:1.5;margin-top:2px}
+.credit a{color:var(--dim)}
+.credit b{font-weight:600;color:var(--dim)}
+#credits .score{font-size:13px;gap:10px;align-items:flex-start}
+#credits .score b{font-weight:600;white-space:nowrap;color:var(--dim)}
 .word{font-size:min(13vw,46px);font-weight:850;letter-spacing:-.02em;line-height:1.1}
 .big{font-size:min(11vw,40px);font-weight:850;letter-spacing:-.02em}
 .tag{font-size:13px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
@@ -300,6 +305,7 @@ summary{font-weight:700;cursor:pointer}
       <div id="rimg"></div>
       <div class="word" id="rword">Pizza</div>
       <div class="muted" id="rcat">Food &amp; Drink</div>
+      <div class="credit" id="rcredit"></div>
     </div>
     <div class="card stack">
       <h3>Roles</h3>
@@ -325,8 +331,11 @@ summary{font-weight:700;cursor:pointer}
   <!-- ============ GIF PACK ============ -->
   <section class="screen" id="s-gifs">
     <div class="top"><button class="back" id="gifback">‹ Back</button><h2>GIF pack</h2><span style="width:56px"></span></div>
-    <div class="switch"><div>Built-in pack<small id="builtinlabel">100+ animations, included with the app</small></div><button class="tog on" data-opt="builtin"></button></div>
+    <div class="switch"><div>Drawn pack<small id="builtinlabel">animations drawn by the app</small></div><button class="tog on" data-opt="builtin"></button></div>
     <div class="strip" id="gifpeek"></div>
+    <div class="switch"><div>Real GIFs<small id="reallabel">from Wikimedia Commons</small></div><button class="tog on" data-opt="real"></button></div>
+    <div class="strip" id="realpeek"></div>
+    <details id="creditsbox"><summary>Credits for the real GIFs</summary><div class="stack" id="credits" style="margin-top:10px"></div></details>
     <p class="muted">You can add your own on top — stored on this phone, so they work offline once added. Each needs a tag: that's what the imposter may be given instead of the picture.</p>
     <div class="stack">
       <label class="btn primary" for="giffile">Add from this phone</label>
@@ -475,6 +484,15 @@ const DB = {
 const PACK = [{f:"rocket-launch.gif",t:"rocket launch"},{f:"shooting-star.gif",t:"shooting star"},{f:"planet-orbit.gif",t:"planet orbit"},{f:"moon-phases.gif",t:"moon phases"},{f:"ufo.gif",t:"ufo"},{f:"satellite.gif",t:"satellite"},{f:"eclipse.gif",t:"eclipse"},{f:"comet.gif",t:"comet"},{f:"starry-night.gif",t:"starry night"},{f:"sunrise.gif",t:"sunrise"},{f:"rain.gif",t:"rain"},{f:"lightning.gif",t:"lightning"},{f:"snowfall.gif",t:"snowfall"},{f:"rainbow.gif",t:"rainbow"},{f:"tornado.gif",t:"tornado"},{f:"heatwave.gif",t:"heatwave"},{f:"puddle-ripple.gif",t:"puddle ripple"},{f:"ocean-wave.gif",t:"ocean wave"},{f:"cloudy.gif",t:"cloudy"},{f:"campfire.gif",t:"campfire"},{f:"candle.gif",t:"candle"},{f:"fireworks.gif",t:"fireworks"},{f:"light-bulb.gif",t:"light bulb"},{f:"lighthouse.gif",t:"lighthouse"},{f:"explosion.gif",t:"explosion"},{f:"sparkler.gif",t:"sparkler"},{f:"volcano.gif",t:"volcano"},{f:"hourglass.gif",t:"hourglass"},{f:"alarm-clock.gif",t:"alarm clock"},{f:"stopwatch.gif",t:"stopwatch"},{f:"pendulum.gif",t:"pendulum"},{f:"metronome.gif",t:"metronome"},{f:"sunset.gif",t:"sunset"},{f:"wifi-signal.gif",t:"wifi signal"},{f:"loading-spinner.gif",t:"loading spinner"},{f:"battery-charging.gif",t:"battery charging"},{f:"download.gif",t:"download"},{f:"progress-bar.gif",t:"progress bar"},{f:"radar.gif",t:"radar"},{f:"padlock.gif",t:"padlock"},{f:"new-mail.gif",t:"new mail"},{f:"phone-ringing.gif",t:"phone ringing"},{f:"camera-flash.gif",t:"camera flash"},{f:"bouncing-football.gif",t:"bouncing football"},{f:"basketball-hoop.gif",t:"basketball hoop"},{f:"tennis-rally.gif",t:"tennis rally"},{f:"bullseye.gif",t:"bullseye"},{f:"splash.gif",t:"splash"},{f:"trophy.gif",t:"trophy"},{f:"chequered-flag.gif",t:"chequered flag"},{f:"dumbbell.gif",t:"dumbbell"},{f:"pool-balls.gif",t:"pool balls"},{f:"coffee.gif",t:"coffee"},{f:"pizza-slice.gif",t:"pizza slice"},{f:"popcorn.gif",t:"popcorn"},{f:"birthday-cake.gif",t:"birthday cake"},{f:"ice-cream.gif",t:"ice cream"},{f:"toast-popping.gif",t:"toast popping"},{f:"frying-egg.gif",t:"frying egg"},{f:"cocktail.gif",t:"cocktail"},{f:"doughnut.gif",t:"doughnut"},{f:"kettle-steam.gif",t:"kettle steam"},{f:"fish.gif",t:"fish"},{f:"butterfly.gif",t:"butterfly"},{f:"bird-flying.gif",t:"bird flying"},{f:"jellyfish.gif",t:"jellyfish"},{f:"bee.gif",t:"bee"},{f:"snail.gif",t:"snail"},{f:"spider-drop.gif",t:"spider drop"},{f:"snake.gif",t:"snake"},{f:"crab.gif",t:"crab"},{f:"paw-prints.gif",t:"paw prints"},{f:"car-driving.gif",t:"car driving"},{f:"traffic-light.gif",t:"traffic light"},{f:"train.gif",t:"train"},{f:"aeroplane.gif",t:"aeroplane"},{f:"sailing-boat.gif",t:"sailing boat"},{f:"hot-air-balloon.gif",t:"hot air balloon"},{f:"bicycle-wheel.gif",t:"bicycle wheel"},{f:"submarine.gif",t:"submarine"},{f:"heartbeat.gif",t:"heartbeat"},{f:"broken-heart.gif",t:"broken heart"},{f:"confetti.gif",t:"confetti"},{f:"balloon.gif",t:"balloon"},{f:"thumbs-up.gif",t:"thumbs up"},{f:"wink.gif",t:"wink"},{f:"crying.gif",t:"crying"},{f:"party-popper.gif",t:"party popper"},{f:"dripping-tap.gif",t:"dripping tap"},{f:"washing-machine.gif",t:"washing machine"},{f:"ceiling-fan.gif",t:"ceiling fan"},{f:"doorbell.gif",t:"doorbell"},{f:"light-switch.gif",t:"light switch"},{f:"dice-roll.gif",t:"dice roll"},{f:"coin-flip.gif",t:"coin flip"},{f:"juggling.gif",t:"juggling"},{f:"spinning-top.gif",t:"spinning top"},{f:"dominoes.gif",t:"dominoes"},{f:"seesaw.gif",t:"seesaw"},{f:"yo-yo.gif",t:"yo-yo"},{f:"key-turning.gif",t:"key turning"},{f:"gears.gif",t:"gears"},{f:"magnet.gif",t:"magnet"},{f:"countdown.gif",t:"countdown"},{f:"snake-game.gif",t:"snake game"},{f:"ripples.gif",t:"ripples"},{f:"bouncing-ball.gif",t:"bouncing ball"},{f:"stairs.gif",t:"stairs"},{f:"latte-art.gif",t:"latte art"},{f:"padlock-unlocking.gif",t:"padlock unlocking"},{f:"thermometer.gif",t:"thermometer"},{f:"umbrella.gif",t:"umbrella"},{f:"crown.gif",t:"crown"},{f:"ghost.gif",t:"ghost"},{f:"bomb.gif",t:"bomb"},{f:"target-lock.gif",t:"target lock"}];
 /* PACK:end */
 
+/* Real animated GIFs harvested from Wikimedia Commons by tools/fetch-gifs.py.
+   All public domain or CC-licensed for reuse; a = author, l = licence,
+   c = the Commons filename, which is also its source page. Credited on the
+   result screen and listed in full in the pack manager. */
+/* REAL:start */
+const REAL = [{f:"annular-solar-eclipse-21-may-2012-japan.gif",t:"annular eclipse",a:"Dontbesogullible",l:"CC BY-SA 3.0",c:"Annular Solar Eclipse 21 May 2012 Japan.gif"},{f:"ball-drop-1-000a-nevit.gif",t:"ball drop",a:"Nevit",l:"CC BY 3.0",c:"Ball drop 1 000a Nevit.gif"},{f:"danielle-robinson-passes-to-damitris-dantas-arou.gif",t:"basketball pass",a:"Lorie Shaull from St Paul, United States",l:"CC BY-SA 2.0",c:"Danielle Robinson passes to Damitris Dantas around A'ja Wilson (48092775172).gif"},{f:"bird-in-flight.gif",t:"bird in flight",a:"Gadgetroid",l:"CC BY-SA 3.0",c:"Bird-in-flight.gif"},{f:"breaking-waves-fast.gif",t:"breaking waves",a:"Jahobr",l:"CC BY-SA 3.0",c:"Breaking waves fast.gif"},{f:"riffle-shuffle.gif",t:"card shuffle",a:"Casint",l:"CC0",c:"Riffle shuffle.gif"},{f:"typical-orange-cat-behavior.gif",t:"cat",a:"Jim67e",l:"CC BY-SA 4.0",c:"Typical orange cat behavior..gif"},{f:"centrifugal-fan.gif",t:"centrifugal fan",a:"EagleX",l:"CC BY 3.0",c:"Centrifugal fan.gif"},{f:"the-immortal-game.gif",t:"chess game",a:"Kaotao",l:"CC0",c:"The Immortal Game.gif"},{f:"pawn-chess-movements.gif",t:"chess pawn",a:"Alma Cebrian",l:"CC BY-SA 3.0",c:"Pawn (chess) movements.gif"},{f:"graham-escapement.gif",t:"clock escapement",a:"Ssawka, Original uploader was Ssawka at pl.wikipedia",l:"CC BY-SA 3.0",c:"Graham escapement.gif"},{f:"nemo-clown-fish-1.gif",t:"clownfish",a:"Karthik Easvur",l:"CC BY-SA 3.0",c:"Nemo clown fish 1.gif"},{f:"diesel-engine-4-cycle-running.gif",t:"diesel engine",a:"Tosaka",l:"CC BY 3.0",c:"Diesel Engine (4 cycle running).gif"},{f:"misza13-s-dog-blue-border.gif",t:"dog",a:"Gurch",l:"CC BY-SA 3.0",c:"Misza13's dog (blue border).gif"},{f:"drawbridge.gif",t:"drawbridge",a:"Y_tambe",l:"CC BY-SA 3.0",c:"Drawbridge.gif"},{f:"wikipedia20-animated-fireworks-1mb.gif",t:"fireworks",a:"Illustrated by Jasmina El Bouamraoui and Karabo Poppy Moletsane. Animators: Kunal Sen &amp; Tisha Pillai",l:"CC0",c:"Wikipedia20 animated Fireworks 1MB.gif"},{f:"floss-dance.gif",t:"floss dance",a:"LittleT889",l:"CC BY-SA 4.0",c:"Floss (dance).gif"},{f:"movablebridge-fold.gif",t:"folding bridge",a:"Y_tambe",l:"CC BY 2.5",c:"MovableBridge fold.gif"},{f:"new4stroke2.gif",t:"four-stroke engine",a:"Andrew Feliks",l:"CC BY-SA 4.0",c:"New4stroke2.gif"},{f:"frog-ba.gif",t:"frog",a:"Ervín Pospíšil",l:"CC BY-SA 3.0",c:"Frog žába.gif"},{f:"animated-two-spur-gears-1-2.gif",t:"gears",a:"Jahobr",l:"CC0",c:"Animated two spur gears 1 2.gif"},{f:"animation-strokkur-geyser.gif",t:"geyser",a:"See the source images",l:"CC BY-SA 3.0",c:"Animation Strokkur Geyser.gif"},{f:"canter-animated.gif",t:"horse canter",a:"Photos and animation by User:Waugsberg",l:"CC BY 2.5",c:"Canter animated.gif"},{f:"horse-gallop.gif",t:"horse gallop",a:"GeeAlice",l:"CC BY-SA 3.0",c:"Horse gallop.gif"},{f:"pelagia-noctiluca-226152673.gif",t:"jellyfish",a:"Golfopolikayak",l:"CC BY 4.0",c:"Pelagia noctiluca 226152673.gif"},{f:"turbofan3-unlabelled.gif",t:"jet engine",a:"Richard Wheeler (Zephyris)",l:"CC BY-SA 3.0",c:"Turbofan3 Unlabelled.gif"},{f:"man-juggling-4-balls-in-shower-pattern.gif",t:"juggling",a:"nummer9",l:"CC BY-SA 3.0",c:"Man juggling 4 balls in shower pattern.gif"},{f:"jumping-jack-animation.gif",t:"jumping jack",a:"Original: gnokii at openclipart.org Animation: MichaelFrey",l:"CC BY-SA 4.0",c:"Jumping jack Animation.gif"},{f:"howe-cauldron-kinetic-sculpture-principle.gif",t:"kinetic sculpture",a:"Cmglee",l:"CC BY-SA 4.0",c:"Howe cauldron kinetic sculpture principle.gif"},{f:"movablebridge-lift.gif",t:"lift bridge",a:"Y_tambe",l:"CC BY 2.5",c:"MovableBridge lift.gif"},{f:"perpetual-motion-maglev-train-concept.gif",t:"maglev train",a:"Wikideas1",l:"CC0",c:"Perpetual motion maglev train concept.gif"},{f:"magnetic-field-of-a-rotating-permanent-magnet.gif",t:"magnetic field",a:"Christiankral",l:"CC BY 4.0",c:"Magnetic field of a rotating permanent magnet.gif"},{f:"animated-mass-spring-faster.gif",t:"mass on a spring",a:"Svjo",l:"CC BY-SA 3.0",c:"Animated-mass-spring-faster.gif"},{f:"southern-hemisphere-moon-phases.gif",t:"moon phases",a:"Tomruen",l:"CC BY-SA 4.0",c:"Southern hemisphere Moon phases.gif"},{f:"newtons-cradle-animation-book-2.gif",t:"newton's cradle",a:"DemonDeLuxe (Dominique Toussaint)",l:"CC BY-SA 3.0",c:"Newtons cradle animation book 2.gif"},{f:"northern-lights-timelapse.gif",t:"northern lights",a:"KristianPikner",l:"CC BY-SA 4.0",c:"Northern Lights timelapse.gif"},{f:"octopus-cyanea-455049471.gif",t:"octopus",a:"Michael Bakker Paiva",l:"CC BY 4.0",c:"Octopus cyanea 455049471.gif"},{f:"phenakistoscope-3g07692b.gif",t:"phenakistoscope",a:"unknown",l:"CC BY-SA 2.5",c:"Phenakistoscope 3g07692b.gif"},{f:"planetary-gear-with-fixed-ring-gear.gif",t:"planetary gears",a:"DaveRcWiki",l:"CC0",c:"Planetary gear with fixed ring gear.gif"},{f:"cards-2.gif",t:"playing cards",a:"Ebaychatter0",l:"CC0",c:"Cards 2.gif"},{f:"popcorn-effect.gif",t:"popcorn",a:"Hinchi tang",l:"CC BY-SA 3.0",c:"Popcorn Effect.gif"},{f:"curtis-and-mitchell-columbian-operation.gif",t:"printing press",a:"Rhododendrites",l:"CC BY-SA 4.0",c:"Curtis and Mitchell Columbian operation.gif"},{f:"uk-roundabout-8-cars-flipped.gif",t:"roundabout",a:"Jdforrester",l:"CC BY-SA 3.0",c:"UK Roundabout 8 Cars flipped.gif"},{f:"wellen-am-meer.gif",t:"sea waves",a:"Jan Hagelskamp1",l:"CC BY 4.0",c:"Wellen am Meer.gif"},{f:"seesaw-in-action.gif",t:"seesaw",a:"Լենա Սահակյան",l:"CC BY-SA 4.0",c:"Seesaw in action.gif"},{f:"backsideflip.gif",t:"skateboard flip",a:"Computer0001",l:"CC0",c:"Backsideflip.gif"},{f:"sleeping-cat.gif",t:"sleeping cat",a:"Stefan-Xp",l:"CC BY-SA 3.0",c:"Sleeping-cat.gif"},{f:"springspirale.gif",t:"slinky",a:"Jan Hagelskamp1",l:"CC BY 4.0",c:"Springspirale.gif"},{f:"bulle-de-savon1.gif",t:"soap bubble",a:"Daniel7",l:"CC BY-SA 3.0",c:"Bulle-de-savon1.gif"},{f:"solar-eclipse-animate-2006-mar-29.gif",t:"solar eclipse",a:"Dr. Andrew Sinclair, Royal Greenwich Observatory, ATSinclair@aol.com",l:"Attribution",c:"Solar eclipse animate (2006-Mar-29).gif"},{f:"spider-which-catches-the-insect.gif",t:"spider",a:"masaki ikeda (talk)",l:"CC BY-SA 3.0",c:"Spider which catches the insect.gif"},{f:"spinning-dancer.gif",t:"spinning dancer",a:"Nobuyuki Kayahara",l:"CC BY-SA 3.0",c:"Spinning Dancer.gif"},{f:"spinningpenguin.gif",t:"spinning penguin",a:"DrawingALotofBlanks",l:"CC BY 3.0",c:"SpinningPenguin.gif"},{f:"steam-locomotive-work2.gif",t:"steam locomotive",a:"de:commons:User:Panther",l:"CC BY-SA 3.0",c:"Steam locomotive work2.gif"},{f:"sunset-half-dome-timelapse.gif",t:"sunset",a:"Av9 Jan Hazevoet LBM1948",l:"CC BY-SA 4.0",c:"Sunset Half Dome timelapse.gif"},{f:"semaforo.gif",t:"traffic light",a:"Mattruffoni",l:"CC BY-SA 4.0",c:"Semaforo.gif"},{f:"adler-typenbewegung-animation.gif",t:"typewriter",a:"Phrontis",l:"CC BY-SA 3.0",c:"Adler Typenbewegung Animation.gif"},{f:"phreatic-eruption-of-taal-volcano-12-january-202.gif",t:"volcano eruption",a:"Buszmail",l:"CC BY-SA 4.0",c:"Phreatic eruption of Taal Volcano, 12 January 2020 (reduced).gif"},{f:"walk-cycle-of-a-tetrapod.gif",t:"walk cycle",a:"svg by Sceptic view - gif extracted by MaxxL",l:"CC0",c:"Walk cycle of a tetrapod.gif"},{f:"wankel-cycle-anim.gif",t:"wankel engine",a:"Y_tambe",l:"CC BY-SA 3.0",c:"Wankel Cycle anim.gif"},{f:"water-drop-animation-enhanced-small.gif",t:"water drop",a:"Original: Chris 73 Derivative work: [[:User:|Gmaxwell]]]]",l:"CC BY-SA 3.0",c:"Water drop animation enhanced small.gif"},{f:"girl-waving.gif",t:"waving",a:"Nicoletse1992",l:"CC BY-SA 4.0",c:"Girl waving.gif"},{f:"panama-flag-waving.gif",t:"waving flag",a:"Northern Pirozhki",l:"CC BY 4.0",c:"Panama flag waving.gif"},{f:"wmde-hand-wave.gif",t:"waving hand",a:"WMDE UX Team",l:"CC BY-SA 4.0",c:"WMDE Hand Wave.gif"},{f:"light-pole-wind-turbine.gif",t:"wind turbine",a:"Wikideas1",l:"CC BY-SA 4.0",c:"Light pole wind turbine.gif"}];
+/* REAL:end */
+const COMMONS = "https://commons.wikimedia.org/wiki/File:";
+
 let GIFS = [];                 // the user's own additions, from IndexedDB
 let dbBlocked = false;
 const urls = new Map();        // id -> object URL
@@ -487,9 +505,11 @@ function gifUrl(g){
 /* Everything playable this round: built-ins (unless switched off) plus
    anything the user has added. */
 function gifPool(){
-  const built = S.opt.builtin === false ? []
+  const drawn = S.opt.builtin === false ? []
     : PACK.map(g=>({ id:"b:"+g.f, tag:g.t, url:"gifs/"+g.f }));
-  return built.concat(GIFS.map(g=>({ id:g.id, tag:g.tag, url:gifUrl(g) })));
+  const real = S.opt.real === false ? []
+    : REAL.map(g=>({ id:"r:"+g.f, tag:g.t, url:"gifs/real/"+g.f, credit:g }));
+  return drawn.concat(real, GIFS.map(g=>({ id:g.id, tag:g.tag, url:gifUrl(g) })));
 }
 function dropUrl(id){
   if(urls.has(id)){ URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
@@ -512,7 +532,7 @@ const S = migrate(Object.assign({
   mode:"classic",
   hint:"category",
   cats:Object.keys(WORDS),
-  opt:{timer:true,shuffle:true,score:true,autohide:true,builtin:true},
+  opt:{timer:true,shuffle:true,score:true,autohide:true,builtin:true,real:true},
   seconds:90,
   hold:8,
   scores:{},
@@ -532,6 +552,7 @@ function migrate(s){
   }
   if(s.opt && s.opt.autohide===undefined) s.opt.autohide=true;
   if(s.opt && s.opt.builtin===undefined) s.opt.builtin=true;
+  if(s.opt && s.opt.real===undefined) s.opt.real=true;
   if(!HINT_DESC[s.hint]) s.hint="category";
   if(!MODE_DESC[s.mode]) s.mode="classic";
   return s;
@@ -694,28 +715,45 @@ function tagFromName(name){
   return name.replace(/\.[a-z0-9]+$/i,"").replace(/[-_]+/g," ")
              .replace(/\s+/g," ").trim().slice(0,40) || "untagged";
 }
+function strip(sel, items){
+  const el=$(sel); el.innerHTML="";
+  el.style.display = items.length ? "flex" : "none";
+  items.forEach(it=>{
+    const im=document.createElement("img");
+    im.src=it.src; im.alt=it.tag; im.title=it.tag; im.loading="lazy";
+    el.append(im);
+  });
+}
 function gifMsg(text,bad){
   const m=$("#gifmsg"); m.textContent=text||""; m.className = bad?"warn":"muted";
 }
 function renderGifs(){
   const grid=$("#gifgrid"); grid.innerHTML="";
   $$("[data-opt='builtin']").forEach(t=>t.classList.toggle("on", S.opt.builtin !== false));
-  $("#builtinlabel").textContent = plural(PACK.length,"animation")+" included with the app";
+  $$("[data-opt='real']").forEach(t=>t.classList.toggle("on", S.opt.real !== false));
+  $("#builtinlabel").textContent = plural(PACK.length,"animation")+" drawn by the app";
+  $("#reallabel").textContent = REAL.length
+    ? plural(REAL.length,"real GIF")+" from Wikimedia Commons"
+    : "none bundled in this build";
   const empty=$("#gifempty");
   empty.style.display = GIFS.length ? "none" : "block";
   empty.innerHTML = dbBlocked
     ? "Your browser won't let this page store files when it's opened straight from disk, so your own GIFs can't be saved here. The built-in pack still works."
-    : "You haven't added any of your own.<br>The built-in pack is enough to play with.";
+    : "You haven't added any of your own.<br>The built-in packs are enough to play with.";
   const bytes = GIFS.reduce((n,g)=>n+(g.blob.size||0),0);
   const size = bytes < 1048576 ? Math.max(1,Math.round(bytes/1024))+" KB" : (bytes/1048576).toFixed(1)+" MB";
   $("#gifstats").textContent = plural(GIFS.length,"GIF")+" of your own" + (bytes ? " · "+size : "");
   $("#gifclear").style.display = GIFS.length ? "flex" : "none";
 
-  const peek=$("#gifpeek"); peek.innerHTML="";                 // a taste of what's in the box
-  shuffle(PACK).slice(0,8).forEach(g=>{
-    const im=document.createElement("img");
-    im.src="gifs/"+g.f; im.alt=g.t; im.title=g.t; im.loading="lazy";
-    peek.append(im);
+  strip("#gifpeek", shuffle(PACK).slice(0,8).map(g=>({src:"gifs/"+g.f, tag:g.t})));
+  strip("#realpeek", shuffle(REAL).slice(0,8).map(g=>({src:"gifs/real/"+g.f, tag:g.t})));
+
+  $("#creditsbox").style.display = REAL.length ? "block" : "none";
+  const cr=$("#credits"); cr.innerHTML="";
+  REAL.slice().sort((a,b)=>a.t.localeCompare(b.t)).forEach(g=>{
+    const d=document.createElement("div"); d.className="score";
+    d.innerHTML = "<span>"+esc(g.t)+"<br><span class='muted'>"+esc(g.a||"unknown")+"</span></span><b>"+esc(g.l)+"</b>";
+    cr.append(d);
   });
   GIFS.forEach(g=>{
     const cell=document.createElement("div"); cell.className="gifcell";
@@ -843,7 +881,7 @@ function hintHTML(){
   }
   // shortlist: the answer hidden among three decoys
   let others = R.mode==="gif"
-    ? gifPool().filter(g=>g.id!==R.gif.id).map(g=>g.tag)
+    ? gifPool().filter(g=>g.tag!==answer).map(g=>g.tag)   // by tag: two packs can share one
     : WORDS[R.cat].filter(w=>w!==answer);
   others = shuffle(Array.from(new Set(others))).slice(0,3);
   return "One of these: <b>"+shuffle(others.concat(answer)).map(esc).join(" · ")+"</b>";
@@ -930,6 +968,8 @@ function startCountdown(sec){
   const bar=$("#countdown"), fill=bar.firstElementChild, num=$("#secs");
   bar.style.display="block"; num.style.display="block";
   hideAt=performance.now()+sec*1000;
+  num.textContent=sec;                    // paint now, not on the first frame
+  fill.style.transform="scaleX(1)";
   cancelAnimationFrame(raf);
   const step=now=>{
     const p=Math.max(0,(hideAt-now)/(sec*1000));
@@ -1088,6 +1128,13 @@ function finish(winner,stolen){
     el.style.width="min(100%,240px)"; el.style.maxHeight="34vh"; el.style.borderRadius="14px";
     ri.append(el);
   }
+  const cd=$("#rcredit");
+  if(isGif && R.gif.credit){
+    const g=R.gif.credit;
+    cd.innerHTML = esc(g.a||"unknown author")+" · "+esc(g.l)+
+      " · <a href='"+COMMONS+encodeURIComponent(g.c)+"' target='_blank' rel='noopener'>Wikimedia Commons</a>";
+    cd.style.display="block";
+  } else cd.style.display="none";
   $("#rword").textContent = R.word;
   $("#rcat").textContent  = isGif ? "" : R.cat + (R.mode==="similar" && R.decoy ? " · imposter had “"+R.decoy+"”" : "");
 

@@ -1,5 +1,5 @@
 /* Cache-first service worker: after the first visit the game runs with no network at all. */
-const CACHE = "imposter-v2";
+const CACHE = "imposter-v3";
 const ASSETS = [
   ".",
   "index.html",
@@ -8,14 +8,19 @@ const ASSETS = [
   "icons/icon-512.png"
 ];
 
-/* The built-in GIF pack (~3 MB). Cached one by one rather than through
-   addAll, so a single failed request can't fail the whole install and
-   leave the app without an offline copy of everything else. */
-function cacheGifs(cache) {
-  return fetch("gifs/index.json")
+/* The built-in GIF packs — drawn (gifs/) and real (gifs/real/). Cached one
+   by one rather than through addAll, so a single failed request can't fail
+   the whole install and leave the app without an offline copy of
+   everything else. */
+function cachePack(cache, dir) {
+  return fetch(dir + "index.json")
     .then(r => r.json())
-    .then(list => Promise.allSettled(list.map(g => cache.add("gifs/" + g.file))))
+    .then(list => Promise.allSettled(list.map(g => cache.add(dir + g.file))))
     .catch(() => {});
+}
+
+function cacheGifs(cache) {
+  return Promise.all([cachePack(cache, "gifs/"), cachePack(cache, "gifs/real/")]);
 }
 
 self.addEventListener("install", e => {
