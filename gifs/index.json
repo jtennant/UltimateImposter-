@@ -1,0 +1,466 @@
+[
+{
+"file": "rocket-launch.gif",
+"tag": "rocket launch"
+},
+{
+"file": "shooting-star.gif",
+"tag": "shooting star"
+},
+{
+"file": "planet-orbit.gif",
+"tag": "planet orbit"
+},
+{
+"file": "moon-phases.gif",
+"tag": "moon phases"
+},
+{
+"file": "ufo.gif",
+"tag": "ufo"
+},
+{
+"file": "satellite.gif",
+"tag": "satellite"
+},
+{
+"file": "eclipse.gif",
+"tag": "eclipse"
+},
+{
+"file": "comet.gif",
+"tag": "comet"
+},
+{
+"file": "starry-night.gif",
+"tag": "starry night"
+},
+{
+"file": "sunrise.gif",
+"tag": "sunrise"
+},
+{
+"file": "rain.gif",
+"tag": "rain"
+},
+{
+"file": "lightning.gif",
+"tag": "lightning"
+},
+{
+"file": "snowfall.gif",
+"tag": "snowfall"
+},
+{
+"file": "rainbow.gif",
+"tag": "rainbow"
+},
+{
+"file": "tornado.gif",
+"tag": "tornado"
+},
+{
+"file": "heatwave.gif",
+"tag": "heatwave"
+},
+{
+"file": "puddle-ripple.gif",
+"tag": "puddle ripple"
+},
+{
+"file": "ocean-wave.gif",
+"tag": "ocean wave"
+},
+{
+"file": "cloudy.gif",
+"tag": "cloudy"
+},
+{
+"file": "campfire.gif",
+"tag": "campfire"
+},
+{
+"file": "candle.gif",
+"tag": "candle"
+},
+{
+"file": "fireworks.gif",
+"tag": "fireworks"
+},
+{
+"file": "light-bulb.gif",
+"tag": "light bulb"
+},
+{
+"file": "lighthouse.gif",
+"tag": "lighthouse"
+},
+{
+"file": "explosion.gif",
+"tag": "explosion"
+},
+{
+"file": "sparkler.gif",
+"tag": "sparkler"
+},
+{
+"file": "volcano.gif",
+"tag": "volcano"
+},
+{
+"file": "hourglass.gif",
+"tag": "hourglass"
+},
+{
+"file": "alarm-clock.gif",
+"tag": "alarm clock"
+},
+{
+"file": "stopwatch.gif",
+"tag": "stopwatch"
+},
+{
+"file": "pendulum.gif",
+"tag": "pendulum"
+},
+{
+"file": "metronome.gif",
+"tag": "metronome"
+},
+{
+"file": "sunset.gif",
+"tag": "sunset"
+},
+{
+"file": "wifi-signal.gif",
+"tag": "wifi signal"
+},
+{
+"file": "loading-spinner.gif",
+"tag": "loading spinner"
+},
+{
+"file": "battery-charging.gif",
+"tag": "battery charging"
+},
+{
+"file": "download.gif",
+"tag": "download"
+},
+{
+"file": "progress-bar.gif",
+"tag": "progress bar"
+},
+{
+"file": "radar.gif",
+"tag": "radar"
+},
+{
+"file": "padlock.gif",
+"tag": "padlock"
+},
+{
+"file": "new-mail.gif",
+"tag": "new mail"
+},
+{
+"file": "phone-ringing.gif",
+"tag": "phone ringing"
+},
+{
+"file": "camera-flash.gif",
+"tag": "camera flash"
+},
+{
+"file": "bouncing-football.gif",
+"tag": "bouncing football"
+},
+{
+"file": "basketball-hoop.gif",
+"tag": "basketball hoop"
+},
+{
+"file": "tennis-rally.gif",
+"tag": "tennis rally"
+},
+{
+"file": "bullseye.gif",
+"tag": "bullseye"
+},
+{
+"file": "splash.gif",
+"tag": "splash"
+},
+{
+"file": "trophy.gif",
+"tag": "trophy"
+},
+{
+"file": "chequered-flag.gif",
+"tag": "chequered flag"
+},
+{
+"file": "dumbbell.gif",
+"tag": "dumbbell"
+},
+{
+"file": "pool-balls.gif",
+"tag": "pool balls"
+},
+{
+"file": "coffee.gif",
+"tag": "coffee"
+},
+{
+"file": "pizza-slice.gif",
+"tag": "pizza slice"
+},
+{
+"file": "popcorn.gif",
+"tag": "popcorn"
+},
+{
+"file": "birthday-cake.gif",
+"tag": "birthday cake"
+},
+{
+"file": "ice-cream.gif",
+"tag": "ice cream"
+},
+{
+"file": "toast-popping.gif",
+"tag": "toast popping"
+},
+{
+"file": "frying-egg.gif",
+"tag": "frying egg"
+},
+{
+"file": "cocktail.gif",
+"tag": "cocktail"
+},
+{
+"file": "doughnut.gif",
+"tag": "doughnut"
+},
+{
+"file": "kettle-steam.gif",
+"tag": "kettle steam"
+},
+{
+"file": "fish.gif",
+"tag": "fish"
+},
+{
+"file": "butterfly.gif",
+"tag": "butterfly"
+},
+{
+"file": "bird-flying.gif",
+"tag": "bird flying"
+},
+{
+"file": "jellyfish.gif",
+"tag": "jellyfish"
+},
+{
+"file": "bee.gif",
+"tag": "bee"
+},
+{
+"file": "snail.gif",
+"tag": "snail"
+},
+{
+"file": "spider-drop.gif",
+"tag": "spider drop"
+},
+{
+"file": "snake.gif",
+"tag": "snake"
+},
+{
+"file": "crab.gif",
+"tag": "crab"
+},
+{
+"file": "paw-prints.gif",
+"tag": "paw prints"
+},
+{
+"file": "car-driving.gif",
+"tag": "car driving"
+},
+{
+"file": "traffic-light.gif",
+"tag": "traffic light"
+},
+{
+"file": "train.gif",
+"tag": "train"
+},
+{
+"file": "aeroplane.gif",
+"tag": "aeroplane"
+},
+{
+"file": "sailing-boat.gif",
+"tag": "sailing boat"
+},
+{
+"file": "hot-air-balloon.gif",
+"tag": "hot air balloon"
+},
+{
+"file": "bicycle-wheel.gif",
+"tag": "bicycle wheel"
+},
+{
+"file": "submarine.gif",
+"tag": "submarine"
+},
+{
+"file": "heartbeat.gif",
+"tag": "heartbeat"
+},
+{
+"file": "broken-heart.gif",
+"tag": "broken heart"
+},
+{
+"file": "confetti.gif",
+"tag": "confetti"
+},
+{
+"file": "balloon.gif",
+"tag": "balloon"
+},
+{
+"file": "thumbs-up.gif",
+"tag": "thumbs up"
+},
+{
+"file": "wink.gif",
+"tag": "wink"
+},
+{
+"file": "crying.gif",
+"tag": "crying"
+},
+{
+"file": "party-popper.gif",
+"tag": "party popper"
+},
+{
+"file": "dripping-tap.gif",
+"tag": "dripping tap"
+},
+{
+"file": "washing-machine.gif",
+"tag": "washing machine"
+},
+{
+"file": "ceiling-fan.gif",
+"tag": "ceiling fan"
+},
+{
+"file": "doorbell.gif",
+"tag": "doorbell"
+},
+{
+"file": "light-switch.gif",
+"tag": "light switch"
+},
+{
+"file": "dice-roll.gif",
+"tag": "dice roll"
+},
+{
+"file": "coin-flip.gif",
+"tag": "coin flip"
+},
+{
+"file": "juggling.gif",
+"tag": "juggling"
+},
+{
+"file": "spinning-top.gif",
+"tag": "spinning top"
+},
+{
+"file": "dominoes.gif",
+"tag": "dominoes"
+},
+{
+"file": "seesaw.gif",
+"tag": "seesaw"
+},
+{
+"file": "yo-yo.gif",
+"tag": "yo-yo"
+},
+{
+"file": "key-turning.gif",
+"tag": "key turning"
+},
+{
+"file": "gears.gif",
+"tag": "gears"
+},
+{
+"file": "magnet.gif",
+"tag": "magnet"
+},
+{
+"file": "countdown.gif",
+"tag": "countdown"
+},
+{
+"file": "snake-game.gif",
+"tag": "snake game"
+},
+{
+"file": "ripples.gif",
+"tag": "ripples"
+},
+{
+"file": "bouncing-ball.gif",
+"tag": "bouncing ball"
+},
+{
+"file": "stairs.gif",
+"tag": "stairs"
+},
+{
+"file": "latte-art.gif",
+"tag": "latte art"
+},
+{
+"file": "padlock-unlocking.gif",
+"tag": "padlock unlocking"
+},
+{
+"file": "thermometer.gif",
+"tag": "thermometer"
+},
+{
+"file": "umbrella.gif",
+"tag": "umbrella"
+},
+{
+"file": "crown.gif",
+"tag": "crown"
+},
+{
+"file": "ghost.gif",
+"tag": "ghost"
+},
+{
+"file": "bomb.gif",
+"tag": "bomb"
+},
+{
+"file": "target-lock.gif",
+"tag": "target lock"
+}
+]

@@ -12,7 +12,7 @@ Everyone gets the same secret word — except the imposter, who's flying blind a
 
 To publish with GitHub Pages: repo **Settings → Pages → Source: deploy from branch**, pick the branch and `/ (root)`. Your URL will be `https://<user>.github.io/<repo>/`.
 
-**Option B — just the file.** `index.html` is completely self-contained: all the CSS, the JavaScript and all 540 words are inside it. Download that one file to your phone and open it. No install, no server, works from `file://`. (You lose the home-screen icon and full-screen chrome, that's all.)
+**Option B — just the file.** `index.html` is completely self-contained: all the CSS, the JavaScript and all 540 words are inside it. Download that one file to your phone and open it. No install, no server, works from `file://`. (You lose the home-screen icon, the full-screen chrome, and GIF mode — which needs the `gifs/` folder alongside it.)
 
 Nothing is ever sent anywhere. Player names and scores live in `localStorage` on the device.
 
@@ -41,7 +41,7 @@ The game only works if clues are honest-but-oblique. Banned: synonyms, definitio
 |---|---|---|
 | **Classic** | A secret word | "You are the imposter", plus whatever hint level you've set |
 | **Undercover** | A word | A *different* word from the same category — and **nobody is told who they are** |
-| **GIF** | An animated GIF from your own pack | The GIF's tag, or nothing |
+| **GIF** | An animated GIF (116 ship with the app) | The GIF's tag, or nothing |
 
 Undercover has no final guess (the imposter had a word all along), so catching them ends it. It's the paranoia mode — you spend the round working out whether the odd one out is you.
 
@@ -68,11 +68,19 @@ Conventional play, if you want it: 3–5 players → 1, 6–8 → 1–2, 9+ → 
 
 Crew see a GIF and give clues about the picture; the imposter gets its tag (or nothing) and has to bluff a reaction to an image they've never seen.
 
-The GIFs are **yours**. There's no GIF search in the app — that would need a network, an API key and someone else's servers, which is exactly what this app is built to avoid. Instead there's a pack manager: **Add from this phone** picks GIFs out of your camera roll or files, and the paste-a-URL box fetches one and stores the file itself, so it still works offline afterwards (many sites block cross-origin fetches — if one does, save the GIF to your phone and add it as a file).
+**116 GIFs ship with the app**, so the mode works the moment you open it — no key, no account, no network. They're in `gifs/`, about 3 MB in total, and the service worker caches them on install so they're there in a field with no signal.
 
-Each GIF gets a tag, taken from the filename and editable in the manager. That tag is what the imposter is given, and what you're all effectively naming when you argue. Files live in IndexedDB on the device and survive reloads and reboots.
+They are *generated*, not collected. `tools/make-gifs.py` draws every one of them from shapes — a rocket lifting off, a moon running through its phases, a washing machine turning, a comet, a snail, a spinning top — and each has a one-word-ish tag that the game uses. That decision is deliberate: pulling a hundred real reaction GIFs would mean an API key and a network at play time, and shipping them in the repo would mean shipping a hundred other people's copyrights. Generated art costs neither, comes to ~28 KB each, and is reproducible — rerun the script and you get the same pack.
 
-One catch: browsers block IndexedDB for pages opened directly from disk (`file://`). GIF mode therefore needs the app installed from a URL, or served over http — the pack manager says so if it detects this. The word game works fine either way.
+They're clean flat animations rather than meme reactions, which changes the flavour of clues a little: you're describing a *thing*, not a situation. In play that works out much like the word game, with the picture doing the work of the category.
+
+### Adding your own
+
+Optional, and stacked on top of the built-ins. **Add from this phone** picks GIFs out of your camera roll or files; the paste-a-URL box fetches one and stores the file itself, so it keeps working offline afterwards (many sites block cross-origin fetches — if one does, save the GIF to your phone and add it as a file instead). Each gets a tag, seeded from the filename and editable. Yours live in IndexedDB on the device.
+
+Turn **Built-in pack** off in the pack manager to play with only your own.
+
+One catch, for your own GIFs only: browsers block IndexedDB for pages opened directly from disk (`file://`), so adding your own needs the app installed from a URL or served over http. The pack manager says so if it detects this. The built-in pack and the word game work either way.
 
 ---
 
@@ -108,7 +116,16 @@ python3 -m http.server 8000    # then http://localhost:8000
 
 Bumping `CACHE` in `sw.js` forces installed clients to pick up new assets.
 
-The browser test suite (`test/game.test.js`) serves the app over http and drives real rounds in Chromium — the reveal interaction, all three modes, every hint level, zero/some/all imposters, the secret-number distribution, multi-imposter elimination, every win path, the GIF pack (stored, renamed, deleted, surviving a reload), settings migration, input guards, and 400 simulated deals checked for role integrity. 145 checks:
+Regenerating the GIF pack (only needed if you edit or add a scene):
+
+```bash
+pip install pillow
+python3 tools/make-gifs.py
+```
+
+It rewrites `gifs/`, prunes files whose scene was renamed or removed, and inlines the new listing into `index.html` between the `PACK:start` / `PACK:end` markers — the app reads that inline list rather than fetching `index.json`, because `fetch()` of a local file is blocked on `file://`. To add a scene, write a function decorated with `@scene("its tag")` that draws into a unit-square canvas; the helpers for circles, polygons, rounded rectangles, rotation, clouds, flames and sparkles are at the top of the file.
+
+The browser test suite (`test/game.test.js`) serves the app over http and drives real rounds in Chromium — the reveal interaction, all three modes, every hint level, zero/some/all imposters, the secret-number distribution, multi-imposter elimination, every win path, the built-in GIF pack (every file fetched and checked it's a real GIF that renders), user GIFs stored/renamed/deleted/surviving a reload, settings migration, input guards, and 400 simulated deals checked for role integrity. 153 checks:
 
 ```bash
 npm install playwright-core

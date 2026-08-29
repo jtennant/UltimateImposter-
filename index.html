@@ -91,7 +91,7 @@ input[type=text]:focus{outline:2px solid var(--acc);outline-offset:-1px}
 }
 .reveal.held{background:linear-gradient(160deg,#241a4d,#150f2e);border-color:var(--acc)}
 .reveal.imp{background:linear-gradient(160deg,#4a1027,#2a0a17);border-color:var(--bad)}
-.reveal img{max-width:100%;max-height:44vh;border-radius:14px;display:block}
+.reveal img{width:min(100%,300px);max-height:44vh;border-radius:14px;display:block}
 .countdown{position:absolute;left:0;right:0;bottom:0;height:6px;background:rgba(255,255,255,.08)}
 .countdown i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));width:100%;transform-origin:left}
 .secs{position:absolute;top:12px;right:16px;font-size:13px;font-weight:800;color:var(--dim);font-variant-numeric:tabular-nums}
@@ -104,6 +104,8 @@ input[type=text]:focus{outline:2px solid var(--acc);outline-offset:-1px}
 .gifcell input{padding:8px 10px;font-size:14px;border-radius:9px}
 .gifcell .del{width:34px;height:34px;flex:0 0 auto;border:1px solid var(--line);border-radius:9px;color:var(--bad);font-size:16px}
 .empty{text-align:center;padding:26px 14px;color:var(--dim)}
+.strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.strip img{width:74px;height:74px;flex:0 0 auto;border-radius:11px;border:1px solid var(--line)}
 .warn{color:var(--warn);font-size:14px}
 .word{font-size:min(13vw,46px);font-weight:850;letter-spacing:-.02em;line-height:1.1}
 .big{font-size:min(11vw,40px);font-weight:850;letter-spacing:-.02em}
@@ -323,7 +325,9 @@ summary{font-weight:700;cursor:pointer}
   <!-- ============ GIF PACK ============ -->
   <section class="screen" id="s-gifs">
     <div class="top"><button class="back" id="gifback">‹ Back</button><h2>GIF pack</h2><span style="width:56px"></span></div>
-    <p class="muted">Your own GIFs, stored on this phone. Added once, they work offline forever. Each one needs a tag — that's what the imposter may be given instead of the picture.</p>
+    <div class="switch"><div>Built-in pack<small id="builtinlabel">100+ animations, included with the app</small></div><button class="tog on" data-opt="builtin"></button></div>
+    <div class="strip" id="gifpeek"></div>
+    <p class="muted">You can add your own on top — stored on this phone, so they work offline once added. Each needs a tag: that's what the imposter may be given instead of the picture.</p>
     <div class="stack">
       <label class="btn primary" for="giffile">Add from this phone</label>
       <input type="file" id="giffile" accept="image/gif,image/webp,image/png,image/jpeg" multiple hidden>
@@ -464,13 +468,28 @@ const DB = {
   clear(){ return DB.tx("readwrite", s=>s.clear()); }
 };
 
-let GIFS = [];                 // in-memory mirror of the pack
+/* The built-in pack: 100+ looping animations shipped with the app, drawn by
+   tools/make-gifs.py. Inlined by that script rather than fetched, because
+   fetch() of a local file is blocked on file:// in some browsers. */
+/* PACK:start */
+const PACK = [{f:"rocket-launch.gif",t:"rocket launch"},{f:"shooting-star.gif",t:"shooting star"},{f:"planet-orbit.gif",t:"planet orbit"},{f:"moon-phases.gif",t:"moon phases"},{f:"ufo.gif",t:"ufo"},{f:"satellite.gif",t:"satellite"},{f:"eclipse.gif",t:"eclipse"},{f:"comet.gif",t:"comet"},{f:"starry-night.gif",t:"starry night"},{f:"sunrise.gif",t:"sunrise"},{f:"rain.gif",t:"rain"},{f:"lightning.gif",t:"lightning"},{f:"snowfall.gif",t:"snowfall"},{f:"rainbow.gif",t:"rainbow"},{f:"tornado.gif",t:"tornado"},{f:"heatwave.gif",t:"heatwave"},{f:"puddle-ripple.gif",t:"puddle ripple"},{f:"ocean-wave.gif",t:"ocean wave"},{f:"cloudy.gif",t:"cloudy"},{f:"campfire.gif",t:"campfire"},{f:"candle.gif",t:"candle"},{f:"fireworks.gif",t:"fireworks"},{f:"light-bulb.gif",t:"light bulb"},{f:"lighthouse.gif",t:"lighthouse"},{f:"explosion.gif",t:"explosion"},{f:"sparkler.gif",t:"sparkler"},{f:"volcano.gif",t:"volcano"},{f:"hourglass.gif",t:"hourglass"},{f:"alarm-clock.gif",t:"alarm clock"},{f:"stopwatch.gif",t:"stopwatch"},{f:"pendulum.gif",t:"pendulum"},{f:"metronome.gif",t:"metronome"},{f:"sunset.gif",t:"sunset"},{f:"wifi-signal.gif",t:"wifi signal"},{f:"loading-spinner.gif",t:"loading spinner"},{f:"battery-charging.gif",t:"battery charging"},{f:"download.gif",t:"download"},{f:"progress-bar.gif",t:"progress bar"},{f:"radar.gif",t:"radar"},{f:"padlock.gif",t:"padlock"},{f:"new-mail.gif",t:"new mail"},{f:"phone-ringing.gif",t:"phone ringing"},{f:"camera-flash.gif",t:"camera flash"},{f:"bouncing-football.gif",t:"bouncing football"},{f:"basketball-hoop.gif",t:"basketball hoop"},{f:"tennis-rally.gif",t:"tennis rally"},{f:"bullseye.gif",t:"bullseye"},{f:"splash.gif",t:"splash"},{f:"trophy.gif",t:"trophy"},{f:"chequered-flag.gif",t:"chequered flag"},{f:"dumbbell.gif",t:"dumbbell"},{f:"pool-balls.gif",t:"pool balls"},{f:"coffee.gif",t:"coffee"},{f:"pizza-slice.gif",t:"pizza slice"},{f:"popcorn.gif",t:"popcorn"},{f:"birthday-cake.gif",t:"birthday cake"},{f:"ice-cream.gif",t:"ice cream"},{f:"toast-popping.gif",t:"toast popping"},{f:"frying-egg.gif",t:"frying egg"},{f:"cocktail.gif",t:"cocktail"},{f:"doughnut.gif",t:"doughnut"},{f:"kettle-steam.gif",t:"kettle steam"},{f:"fish.gif",t:"fish"},{f:"butterfly.gif",t:"butterfly"},{f:"bird-flying.gif",t:"bird flying"},{f:"jellyfish.gif",t:"jellyfish"},{f:"bee.gif",t:"bee"},{f:"snail.gif",t:"snail"},{f:"spider-drop.gif",t:"spider drop"},{f:"snake.gif",t:"snake"},{f:"crab.gif",t:"crab"},{f:"paw-prints.gif",t:"paw prints"},{f:"car-driving.gif",t:"car driving"},{f:"traffic-light.gif",t:"traffic light"},{f:"train.gif",t:"train"},{f:"aeroplane.gif",t:"aeroplane"},{f:"sailing-boat.gif",t:"sailing boat"},{f:"hot-air-balloon.gif",t:"hot air balloon"},{f:"bicycle-wheel.gif",t:"bicycle wheel"},{f:"submarine.gif",t:"submarine"},{f:"heartbeat.gif",t:"heartbeat"},{f:"broken-heart.gif",t:"broken heart"},{f:"confetti.gif",t:"confetti"},{f:"balloon.gif",t:"balloon"},{f:"thumbs-up.gif",t:"thumbs up"},{f:"wink.gif",t:"wink"},{f:"crying.gif",t:"crying"},{f:"party-popper.gif",t:"party popper"},{f:"dripping-tap.gif",t:"dripping tap"},{f:"washing-machine.gif",t:"washing machine"},{f:"ceiling-fan.gif",t:"ceiling fan"},{f:"doorbell.gif",t:"doorbell"},{f:"light-switch.gif",t:"light switch"},{f:"dice-roll.gif",t:"dice roll"},{f:"coin-flip.gif",t:"coin flip"},{f:"juggling.gif",t:"juggling"},{f:"spinning-top.gif",t:"spinning top"},{f:"dominoes.gif",t:"dominoes"},{f:"seesaw.gif",t:"seesaw"},{f:"yo-yo.gif",t:"yo-yo"},{f:"key-turning.gif",t:"key turning"},{f:"gears.gif",t:"gears"},{f:"magnet.gif",t:"magnet"},{f:"countdown.gif",t:"countdown"},{f:"snake-game.gif",t:"snake game"},{f:"ripples.gif",t:"ripples"},{f:"bouncing-ball.gif",t:"bouncing ball"},{f:"stairs.gif",t:"stairs"},{f:"latte-art.gif",t:"latte art"},{f:"padlock-unlocking.gif",t:"padlock unlocking"},{f:"thermometer.gif",t:"thermometer"},{f:"umbrella.gif",t:"umbrella"},{f:"crown.gif",t:"crown"},{f:"ghost.gif",t:"ghost"},{f:"bomb.gif",t:"bomb"},{f:"target-lock.gif",t:"target lock"}];
+/* PACK:end */
+
+let GIFS = [];                 // the user's own additions, from IndexedDB
 let dbBlocked = false;
 const urls = new Map();        // id -> object URL
 
 function gifUrl(g){
   if(!urls.has(g.id)) urls.set(g.id, URL.createObjectURL(g.blob));
   return urls.get(g.id);
+}
+
+/* Everything playable this round: built-ins (unless switched off) plus
+   anything the user has added. */
+function gifPool(){
+  const built = S.opt.builtin === false ? []
+    : PACK.map(g=>({ id:"b:"+g.f, tag:g.t, url:"gifs/"+g.f }));
+  return built.concat(GIFS.map(g=>({ id:g.id, tag:g.tag, url:gifUrl(g) })));
 }
 function dropUrl(id){
   if(urls.has(id)){ URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
@@ -493,7 +512,7 @@ const S = migrate(Object.assign({
   mode:"classic",
   hint:"category",
   cats:Object.keys(WORDS),
-  opt:{timer:true,shuffle:true,score:true,autohide:true},
+  opt:{timer:true,shuffle:true,score:true,autohide:true,builtin:true},
   seconds:90,
   hold:8,
   scores:{},
@@ -512,6 +531,7 @@ function migrate(s){
     delete s.opt.hint;
   }
   if(s.opt && s.opt.autohide===undefined) s.opt.autohide=true;
+  if(s.opt && s.opt.builtin===undefined) s.opt.builtin=true;
   if(!HINT_DESC[s.hint]) s.hint="category";
   if(!MODE_DESC[s.mode]) s.mode="classic";
   return s;
@@ -608,9 +628,11 @@ function renderSetup(){
   const isGif = S.mode==="gif", isUnder = S.mode==="similar";
   $("#catblock").style.display = isGif ? "none" : "flex";
   $("#gifblock").style.display = isGif ? "flex" : "none";
-  $("#gifcount").textContent = dbBlocked
-    ? "Storage is blocked when the page is opened as a file — install the app or serve it over http to use GIF mode."
-    : GIFS.length ? plural(GIFS.length,"GIF")+" in your pack." : "No GIFs yet — add a few.";
+  const poolN = gifPool().length;
+  $("#gifcount").textContent =
+      poolN===0 ? "No GIFs to play with — turn the built-in pack back on, or add your own."
+    : GIFS.length ? plural(poolN,"GIF")+" ready ("+plural(GIFS.length,"of your own")+")."
+    : plural(poolN,"GIF")+" ready — the built-in pack. You can add your own too.";
 
   // Undercover never shows a hint: the imposter isn't told they are one.
   $("#hinthead").parentElement.style.display = isUnder ? "none" : "flex";
@@ -640,10 +662,10 @@ function renderSetup(){
     : "Stays up until you tap Hide";
   $("#holdrow").style.display = S.opt.autohide ? "flex" : "none";
 
-  const blocked = isGif ? (GIFS.length===0) : (S.cats.length===0);
+  const blocked = isGif ? (gifPool().length===0) : (S.cats.length===0);
   $("#start").disabled = blocked;
   $("#start").textContent = !blocked ? "Deal roles"
-    : isGif ? "Add some GIFs first" : "Pick at least one category";
+    : isGif ? "No GIFs to play with" : "Pick at least one category";
 }
 
 function clampImposters(){ S.imposters = Math.max(0, Math.min(S.imposters, S.players.length)); }
@@ -660,6 +682,7 @@ $$("[data-opt]").forEach(t=>t.onclick=()=>{
   const k=t.dataset.opt;
   if(k==="randomImps") S.randomImps=!S.randomImps; else S.opt[k]=!S.opt[k];
   save(); renderSetup();
+  if($("#s-gifs").classList.contains("on")) renderGifs();
 });
 $$("[data-sec]").forEach(p=>p.onclick=()=>{ S.seconds=+p.dataset.sec; save(); renderSetup(); });
 $$("[data-hold]").forEach(p=>p.onclick=()=>{ S.hold=+p.dataset.hold; save(); renderSetup(); });
@@ -676,14 +699,24 @@ function gifMsg(text,bad){
 }
 function renderGifs(){
   const grid=$("#gifgrid"); grid.innerHTML="";
-  $("#gifempty").style.display = GIFS.length ? "none" : "block";
-  if(dbBlocked){
-    $("#gifempty").innerHTML = "Your browser won't let this page store files when it's opened directly from disk.<br>Install the app (or serve it over http) and GIF mode will work.";
-    $("#gifempty").style.display="block";
-  }
+  $$("[data-opt='builtin']").forEach(t=>t.classList.toggle("on", S.opt.builtin !== false));
+  $("#builtinlabel").textContent = plural(PACK.length,"animation")+" included with the app";
+  const empty=$("#gifempty");
+  empty.style.display = GIFS.length ? "none" : "block";
+  empty.innerHTML = dbBlocked
+    ? "Your browser won't let this page store files when it's opened straight from disk, so your own GIFs can't be saved here. The built-in pack still works."
+    : "You haven't added any of your own.<br>The built-in pack is enough to play with.";
   const bytes = GIFS.reduce((n,g)=>n+(g.blob.size||0),0);
   const size = bytes < 1048576 ? Math.max(1,Math.round(bytes/1024))+" KB" : (bytes/1048576).toFixed(1)+" MB";
-  $("#gifstats").textContent = plural(GIFS.length,"GIF") + (bytes ? " · "+size : "");
+  $("#gifstats").textContent = plural(GIFS.length,"GIF")+" of your own" + (bytes ? " · "+size : "");
+  $("#gifclear").style.display = GIFS.length ? "flex" : "none";
+
+  const peek=$("#gifpeek"); peek.innerHTML="";                 // a taste of what's in the box
+  shuffle(PACK).slice(0,8).forEach(g=>{
+    const im=document.createElement("img");
+    im.src="gifs/"+g.f; im.alt=g.t; im.title=g.t; im.loading="lazy";
+    peek.append(im);
+  });
   GIFS.forEach(g=>{
     const cell=document.createElement("div"); cell.className="gifcell";
     const img=document.createElement("img"); img.src=gifUrl(g); img.alt=g.tag; img.loading="lazy";
@@ -751,8 +784,9 @@ function drawWord(){
 }
 
 function drawGif(){
-  let fresh = GIFS.filter(g=> !S.usedGifs.includes(g.id));
-  if(!fresh.length){ S.usedGifs=[]; fresh=GIFS; }
+  const all=gifPool();
+  let fresh = all.filter(g=> !S.usedGifs.includes(g.id));
+  if(!fresh.length){ S.usedGifs=[]; fresh=all; }
   const g=pick(fresh);
   S.usedGifs.push(g.id);
   if(S.usedGifs.length>200) S.usedGifs=S.usedGifs.slice(-100);
@@ -809,7 +843,7 @@ function hintHTML(){
   }
   // shortlist: the answer hidden among three decoys
   let others = R.mode==="gif"
-    ? GIFS.filter(g=>g.id!==R.gif.id).map(g=>g.tag)
+    ? gifPool().filter(g=>g.id!==R.gif.id).map(g=>g.tag)
     : WORDS[R.cat].filter(w=>w!==answer);
   others = shuffle(Array.from(new Set(others))).slice(0,3);
   return "One of these: <b>"+shuffle(others.concat(answer)).map(esc).join(" · ")+"</b>";
@@ -869,7 +903,7 @@ function showRole(){
     if(R.mode==="gif"){
       name.style.display="none";
       const el=document.createElement("img");
-      el.src=gifUrl(R.gif); el.alt="";
+      el.src=R.gif.url; el.alt="";
       img.innerHTML=""; img.append(el); img.style.display="block";
     }else{
       name.className="word"; name.textContent=R.word;
@@ -1050,8 +1084,8 @@ function finish(winner,stolen){
   $("#rlabel").textContent = isGif ? "The GIF was" : "The secret word was";
   const ri=$("#rimg"); ri.innerHTML="";
   if(isGif){
-    const el=document.createElement("img"); el.src=gifUrl(R.gif); el.alt="";
-    el.style.maxWidth="100%"; el.style.maxHeight="34vh"; el.style.borderRadius="14px";
+    const el=document.createElement("img"); el.src=R.gif.url; el.alt="";
+    el.style.width="min(100%,240px)"; el.style.maxHeight="34vh"; el.style.borderRadius="14px";
     ri.append(el);
   }
   $("#rword").textContent = R.word;

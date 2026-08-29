@@ -13,7 +13,7 @@ const fs = require('fs');
 const nodePath = require('path');
 
 const ROOT = nodePath.join(__dirname, '..');
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/png', '.gif': 'image/gif', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
 
 const EXE = [
   process.env.CHROME_PATH,
@@ -264,22 +264,27 @@ const server = http.createServer((req, res) => {
   await page.reload();
   await toSetup();
   await page.click('[data-mode="gif"]');
-  ok('GIF mode blocks start with an empty pack', await page.$eval('#start', b => b.disabled));
-  ok('start button says why', (await page.textContent('#start')).includes('Add some GIFs'), await page.textContent('#start'));
+  const pack = await page.evaluate(() => ({ n: PACK.length, sample: PACK.slice(0, 2), tags: new Set(PACK.map(g => g.t)).size }));
+  ok('built-in pack is inlined', pack.n >= 100, pack.n);
+  ok('every built-in tag is unique', pack.tags === pack.n, pack);
+  ok('GIF mode is playable out of the box', !(await page.$eval('#start', b => b.disabled)));
+  ok('setup says the pack is ready', /\d+ GIFs ready/.test(await page.textContent('#gifcount')), await page.textContent('#gifcount'));
   ok('categories hidden in GIF mode', !(await page.isVisible('#catblock')));
 
-  const added = await page.evaluate(async b64 => {
-    const bin = atob(b64), bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    for (const tag of ['dancing cat', 'facepalm', 'mic drop', 'awkward wave', 'slow clap']) {
-      await addGif(new Blob([bytes], { type: 'image/gif' }), tag);
+  // every file the pack claims to have must actually be servable
+  const missing = await page.evaluate(async () => {
+    const bad = [];
+    for (const g of PACK) {
+      const r = await fetch('gifs/' + g.f, { method: 'GET' });
+      if (!r.ok) bad.push(g.f);
+      else {
+        const b = await r.blob();
+        if (b.type !== 'image/gif' || b.size < 200) bad.push(g.f + ':' + b.type + ':' + b.size);
+      }
     }
-    renderSetup();
-    return GIFS.length;
-  }, GIF_B64);
-  ok('5 GIFs stored', added === 5, added);
-  ok('start unblocked once the pack has GIFs', !(await page.$eval('#start', b => b.disabled)));
-  ok('pack count shown in setup', (await page.textContent('#gifcount')).includes('5 GIFs'), await page.textContent('#gifcount'));
+    return bad;
+  });
+  ok('every built-in GIF file exists and is a real GIF', missing.length === 0, missing.slice(0, 5));
 
   await setImposters(1);
   await page.click('[data-hint="category"]');
@@ -291,11 +296,16 @@ const server = http.createServer((req, res) => {
   ok('crew see the GIF, not a word', gifCrew.every(c => c.gif === true), gifCrew.map(c => c.gif));
   ok('imposter does not see the GIF', imp[0].gif === false);
   ok('imposter gets the tag', imp[0].hint === 'Tag: ' + r.word, [imp[0].hint, r.word]);
+  ok('the GIF actually renders', await page.evaluate(() => {
+    const el = document.querySelector('#rimg img, #dealimg img');
+    return !el || el.naturalWidth > 0;
+  }));
   ok('crew wording is about seeing, not knowing', gifCrew[0].sub.includes("hasn't seen this"), gifCrew[0].sub);
   await page.click('#tovote');
   await page.click(`#votegrid button:text-is("${imp[0].name}")`);
   await page.click('#gwrong');
-  ok('result shows the GIF', await page.isVisible('#rimg img'));
+  await page.waitForFunction(() => { const i = document.querySelector('#rimg img'); return i && i.complete; });
+  ok('result shows the GIF', await page.$eval('#rimg img', i => i.naturalWidth > 0));
   ok('result labels it as a GIF', (await page.textContent('#rlabel')).includes('GIF'), await page.textContent('#rlabel'));
   ok('result shows the tag', (await page.textContent('#rword')) === r.word, [await page.textContent('#rword'), r.word]);
 
@@ -315,14 +325,46 @@ const server = http.createServer((req, res) => {
   ok('GIF shortlist offers 4 tags', shortlist.length === 4, shortlist);
   ok('GIF shortlist contains the real tag', shortlist.includes(r.word), [shortlist, r.word]);
   ok('GIF shortlist decoys are real tags from the pack',
-    await page.evaluate(list => list.every(t => GIFS.some(g => g.tag === t)), shortlist), shortlist);
+    await page.evaluate(list => list.every(t => gifPool().some(g => g.tag === t)), shortlist), shortlist);
   await page.click('#tovote'); await page.click('#novote');
+
+  const noRepeat = await page.evaluate(() => {
+    S.usedGifs = [];
+    const out = [];
+    for (let i = 0; i < 40; i++) { startRound(); out.push(R.gif.id); }
+    renderSetup(); go('setup');
+    return new Set(out).size;
+  });
+  ok('40 GIF rounds with no repeat', noRepeat === 40, noRepeat);
+
+  // the user's own GIFs sit on top of the built-ins
+  const added = await page.evaluate(async b64 => {
+    const bin = atob(b64), bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    for (const tag of ['dancing cat', 'facepalm', 'mic drop', 'awkward wave', 'slow clap']) {
+      await addGif(new Blob([bytes], { type: 'image/gif' }), tag);
+    }
+    renderSetup();
+    return { user: GIFS.length, pool: gifPool().length };
+  }, GIF_B64);
+  ok('5 user GIFs stored', added.user === 5, added);
+  ok('pool is built-ins plus the user\'s own', added.pool === pack.n + 5, added);
+  ok('setup counts both', (await page.textContent('#gifcount')).includes('5 of your own'), await page.textContent('#gifcount'));
+
+  // built-ins can be switched off to play with only your own
+  await page.click('[data-go="gifs"]');
+  await page.click('[data-opt="builtin"]');
+  ok('built-ins off leaves only the user pack',
+    await page.evaluate(() => gifPool().length) === 5, await page.evaluate(() => gifPool().length));
+  await page.click('[data-opt="builtin"]');
+  ok('built-ins back on', await page.evaluate(() => gifPool().length) === pack.n + 5);
+  await page.click('#gifback');
 
   console.log('\n== 8. GIF pack manager ==');
   await toSetup();
   await page.click('[data-go="gifs"]');
-  ok('manager lists every GIF', (await page.$$('.gifcell')).length === 5);
-  ok('stats line shows the count', (await page.textContent('#gifstats')).startsWith('5 GIFs'), await page.textContent('#gifstats'));
+  ok('manager lists the user\'s own GIFs only', (await page.$$('.gifcell')).length === 5);
+  ok('stats line counts the user\'s own', (await page.textContent('#gifstats')).startsWith('5 GIFs of your own'), await page.textContent('#gifstats'));
   await page.fill('.gifcell input >> nth=0', 'renamed tag');
   await page.click('.gifcell .del >> nth=1');
   await page.waitForTimeout(120);
