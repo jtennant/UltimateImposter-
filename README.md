@@ -20,7 +20,7 @@ Nothing is ever sent anywhere. Player names and scores live in `localStorage` on
 
 ## How a round works
 
-1. **Deal.** The phone names each player in turn. You *hold* a button to see your role — it's on screen only while your thumb is down, so a slip of the hand doesn't burn you. Release, pass on.
+1. **Deal.** The phone names each player in turn. Tap to see your role; it hides itself again after a few seconds (5/8/12/20, or never — your call), with a countdown bar so you can see it coming. Tap **Hide it** to go early. The hide button is locked for the first half-second, so a double-tap can't skip you past your own role.
 2. **Clues.** The app picks a random speaking order and shows it. Going round, everyone says **one word** about the secret word.
 3. **Discuss.** Optional timer (45s / 90s / 2m / 3m) with a beep and a buzz at zero. The screen is kept awake while you argue.
 4. **Vote.** Count votes out loud, tap whoever got the most. With multiple imposters the vote repeats until either a crew member is voted out (imposters win) or all imposters are caught.
@@ -37,28 +37,54 @@ The game only works if clues are honest-but-oblique. Banned: synonyms, definitio
 
 ## Modes
 
-| Mode | The imposter sees | Feels like |
+| Mode | Crew get | The imposter gets |
 |---|---|---|
-| **Classic** | "You are the imposter" + the category | The standard game. Enough of a foothold to bluff. |
-| **Blackout** | "You are the imposter". Nothing else. | Brutal. Pure improvisation off other people's clues. |
-| **Undercover** | A *different word from the same category* — and **nobody is told who they are** | Paranoia mode. You spend the round working out whether the odd one out is you. |
+| **Classic** | A secret word | "You are the imposter", plus whatever hint level you've set |
+| **Undercover** | A word | A *different* word from the same category — and **nobody is told who they are** |
+| **GIF** | An animated GIF from your own pack | The GIF's tag, or nothing |
 
-Undercover has no final guess (the imposter had a word all along), so catching them ends it.
+Undercover has no final guess (the imposter had a word all along), so catching them ends it. It's the paranoia mode — you spend the round working out whether the odd one out is you.
+
+### What the imposter gets
+
+A separate setting, so you can dial the difficulty without changing the mode:
+
+- **Nothing** — brutal. Pure improvisation off other people's clues.
+- **Category** — "Food & Drink". The standard game.
+- **Vague clue** — the shape of the answer only: "2 words · 11 letters". Useless on its own, lethal once a few clues have landed.
+- **Shortlist** — four possibilities, one of them right. Generous; good with kids.
 
 ### Number of imposters
 
-Standard play is one. The app allows up to 3, capped at `floor((players − 1) / 2)` so imposters can never reach half the table. Rules of thumb from how the game is usually played: 3–5 players → 1, 6–8 → 1–2, 9+ → 2–3. Two imposters changes the game a lot — they can corroborate each other, so give the crew more clue rounds.
+Anything from **none** to **everyone**, not just the usual one.
+
+- **Zero** is a real round, not a bug. The crew win by voting nobody out, and lose the moment they convict one of their own. Paranoia does the work for you.
+- **Everyone** means nobody was given the word. The whole table bluffs at once, one vote ends it, and you all guess the word together at the end — get it and you all win.
+- **Secret number** rolls it fresh each round and doesn't tell you: usually one, sometimes none, occasionally two or three, rarely the whole table. With this on, "is there even an imposter?" is a live question every round. The app is careful never to leak the count — the crew card says "someone here might not know this. Or nobody. Or everyone", and the vote screen won't tell you how many are left.
+
+Conventional play, if you want it: 3–5 players → 1, 6–8 → 1–2, 9+ → 2–3. Two imposters changes the game a lot — they can corroborate each other, so give the crew more clue rounds.
+
+## GIF mode
+
+Crew see a GIF and give clues about the picture; the imposter gets its tag (or nothing) and has to bluff a reaction to an image they've never seen.
+
+The GIFs are **yours**. There's no GIF search in the app — that would need a network, an API key and someone else's servers, which is exactly what this app is built to avoid. Instead there's a pack manager: **Add from this phone** picks GIFs out of your camera roll or files, and the paste-a-URL box fetches one and stores the file itself, so it still works offline afterwards (many sites block cross-origin fetches — if one does, save the GIF to your phone and add it as a file).
+
+Each GIF gets a tag, taken from the filename and editable in the manager. That tag is what the imposter is given, and what you're all effectively naming when you argue. Files live in IndexedDB on the device and survive reloads and reboots.
+
+One catch: browsers block IndexedDB for pages opened directly from disk (`file://`). GIF mode therefore needs the app installed from a URL, or served over http — the pack manager says so if it detects this. The word game works fine either way.
 
 ---
 
 ## Options
 
 - **540 words across 18 categories** — pick any combination. Categories are British-flavoured but not obscure; there's an *Easy (kids)* set.
-- **No repeats** until the selected pool is exhausted.
-- **Category hint** for the imposter — on/off.
+- **No repeats** until the selected pool is exhausted (GIFs too).
+- **Auto-hide** the role card after 5/8/12/20 seconds, or leave it up until tapped.
+- **Discussion timer** with a beep and a buzz at zero; screen kept awake while you argue.
 - **Random clue order** each round — on/off (off = fixed seating order).
 - **Scoreboard** persisted across rounds; winners each take a point.
-- Player names are editable and remembered.
+- Player names are editable and remembered. Settings from older versions migrate automatically.
 
 ---
 
@@ -67,6 +93,8 @@ Standard play is one. The app allows up to 3, capped at `floor((players − 1) /
 You asked for something you can just *use*, with no server. A pass-the-phone game is the one variant of this genre that genuinely needs zero networking — the secret only has to be kept from people in the room, and the phone changes hands anyway, so one device is the whole architecture. The alternatives (room codes, everyone on their own phone) all require a backend or WebRTC signalling, plus signal in the room, for no gain at a table where you're already looking at each other.
 
 So: one HTML file, vanilla JS, no build step, no dependencies, no analytics, no fonts to fetch. Add a manifest and a service worker on top and the same file becomes an installable offline app. To add words, edit the `WORDS` object near the top of the `<script>` — it's a plain map of category → array.
+
+The role card is tap-to-reveal rather than hold-to-reveal. Holding looked safer, but a long press is the OS's text-selection gesture and fights it on both iOS and Android, and a brief press meant you could blink and miss your own role. A tap plus a visible auto-hide countdown keeps the card off the screen when it's being passed around, without wrestling the platform for the gesture.
 
 ---
 
@@ -80,11 +108,11 @@ python3 -m http.server 8000    # then http://localhost:8000
 
 Bumping `CACHE` in `sw.js` forces installed clients to pick up new assets.
 
-The browser test suite (`test/game.test.js`) drives real rounds in Chromium — role dealing, all three modes, multi-imposter elimination, every win path, persistence, input guards, and 200 simulated deals checked for role integrity:
+The browser test suite (`test/game.test.js`) serves the app over http and drives real rounds in Chromium — the reveal interaction, all three modes, every hint level, zero/some/all imposters, the secret-number distribution, multi-imposter elimination, every win path, the GIF pack (stored, renamed, deleted, surviving a reload), settings migration, input guards, and 400 simulated deals checked for role integrity. 145 checks:
 
 ```bash
 npm install playwright-core
-node test/game.test.js
+node test/game.test.js       # CHROME_PATH=... if Chromium isn't found
 ```
 
 ---

@@ -20,7 +20,11 @@
   --acc:#7c5cff; --acc2:#00d4ff; --good:#22c55e; --bad:#ff4d6d; --warn:#ffb020;
   --r:18px;
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+*{
+  box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none
+}
+input{-webkit-user-select:text;user-select:text}
 html,body{height:100%}
 html{background:var(--bg)}
 body{
@@ -87,6 +91,20 @@ input[type=text]:focus{outline:2px solid var(--acc);outline-offset:-1px}
 }
 .reveal.held{background:linear-gradient(160deg,#241a4d,#150f2e);border-color:var(--acc)}
 .reveal.imp{background:linear-gradient(160deg,#4a1027,#2a0a17);border-color:var(--bad)}
+.reveal img{max-width:100%;max-height:44vh;border-radius:14px;display:block}
+.countdown{position:absolute;left:0;right:0;bottom:0;height:6px;background:rgba(255,255,255,.08)}
+.countdown i{display:block;height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));width:100%;transform-origin:left}
+.secs{position:absolute;top:12px;right:16px;font-size:13px;font-weight:800;color:var(--dim);font-variant-numeric:tabular-nums}
+.hintbox{margin-top:4px;padding:10px 14px;border-radius:12px;background:rgba(0,0,0,.28);font-size:15px;line-height:1.5}
+.hintbox b{color:#fff}
+.gifgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.gifcell{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.gifcell img{width:100%;height:96px;object-fit:cover;background:#000}
+.gifcell .meta{padding:8px;display:flex;gap:6px;align-items:center}
+.gifcell input{padding:8px 10px;font-size:14px;border-radius:9px}
+.gifcell .del{width:34px;height:34px;flex:0 0 auto;border:1px solid var(--line);border-radius:9px;color:var(--bad);font-size:16px}
+.empty{text-align:center;padding:26px 14px;color:var(--dim)}
+.warn{color:var(--warn);font-size:14px}
 .word{font-size:min(13vw,46px);font-weight:850;letter-spacing:-.02em;line-height:1.1}
 .big{font-size:min(11vw,40px);font-weight:850;letter-spacing:-.02em}
 .tag{font-size:13px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
@@ -150,24 +168,28 @@ summary{font-weight:700;cursor:pointer}
       <div class="plist" id="plist"></div>
     </div>
 
-    <div class="card row" style="justify-content:space-between">
-      <div><h3>Imposters</h3><p class="muted" id="imphint">1 imposter</p></div>
-      <div class="stepper">
-        <button id="iminus">−</button><span class="val" id="ival">1</span><button id="iplus">+</button>
+    <div class="card stack">
+      <div class="row" style="justify-content:space-between">
+        <div><h3>Imposters</h3><p class="muted" id="imphint">1 imposter</p></div>
+        <div class="stepper">
+          <button id="iminus">−</button><span class="val" id="ival">1</span><button id="iplus">+</button>
+        </div>
       </div>
+      <div class="switch"><div>Secret number<small>Randomise it each round — 0 to everyone. Nobody knows how many, or if there's one at all.</small></div><button class="tog" data-opt="randomImps"></button></div>
+      <p class="warn" id="impwarn" style="display:none"></p>
     </div>
 
     <div class="stack">
       <h3>Game mode</h3>
       <div class="row wrap" id="modes">
         <button class="pill on" data-mode="classic">Classic</button>
-        <button class="pill" data-mode="blank">Blackout</button>
         <button class="pill" data-mode="similar">Undercover</button>
+        <button class="pill" data-mode="gif">GIF</button>
       </div>
       <p class="muted" id="modedesc"></p>
     </div>
 
-    <div class="stack">
+    <div class="stack" id="catblock">
       <h3>Categories</h3>
       <div class="row wrap" id="cats"></div>
       <div class="row" style="gap:8px">
@@ -176,10 +198,28 @@ summary{font-weight:700;cursor:pointer}
       </div>
     </div>
 
+    <div class="stack" id="gifblock" style="display:none">
+      <h3>GIF pack</h3>
+      <p class="muted" id="gifcount">No GIFs yet.</p>
+      <button class="btn" data-go="gifs">Manage GIF pack</button>
+    </div>
+
+    <div class="stack">
+      <h3 id="hinthead">What the imposter gets</h3>
+      <div class="row wrap" id="hints">
+        <button class="pill" data-hint="none">Nothing</button>
+        <button class="pill on" data-hint="category">Category</button>
+        <button class="pill" data-hint="vague">Vague clue</button>
+        <button class="pill" data-hint="shortlist">Shortlist</button>
+      </div>
+      <p class="muted" id="hintdesc"></p>
+    </div>
+
     <details>
       <summary>Options</summary>
       <div class="stack" style="margin-top:12px">
-        <div class="switch"><div>Category hint for imposter<small>Imposter sees the category, not the word</small></div><button class="tog on" data-opt="hint"></button></div>
+        <div class="switch"><div>Auto-hide the card<small id="holdlabel">Hides itself 8 seconds after you reveal it</small></div><button class="tog on" data-opt="autohide"></button></div>
+        <div class="row" id="holdrow"><button class="pill" data-hold="5">5s</button><button class="pill on" data-hold="8">8s</button><button class="pill" data-hold="12">12s</button><button class="pill" data-hold="20">20s</button></div>
         <div class="switch"><div>Discussion timer<small id="timerlabel">90 seconds</small></div><button class="tog on" data-opt="timer"></button></div>
         <div class="row" id="timerrow"><button class="pill" data-sec="45">45s</button><button class="pill on" data-sec="90">90s</button><button class="pill" data-sec="120">2m</button><button class="pill" data-sec="180">3m</button></div>
         <div class="switch"><div>Random clue order<small>Shuffle who speaks first each round</small></div><button class="tog on" data-opt="shuffle"></button></div>
@@ -193,13 +233,20 @@ summary{font-weight:700;cursor:pointer}
 
   <!-- ============ DEAL / REVEAL ============ -->
   <section class="screen" id="s-deal">
-    <div class="progress"><i id="dealbar"></i></div>
+    <div class="row" style="gap:12px">
+      <div class="progress grow"><i id="dealbar"></i></div>
+      <button class="back" id="dealcancel">Cancel</button>
+    </div>
     <div class="reveal" id="revealcard">
+      <div class="secs" id="secs" style="display:none"></div>
       <div class="tag" id="dealtag">Pass the phone to</div>
       <div class="big" id="dealname">Player 1</div>
-      <p id="dealsub">Hold the button below when you're ready.<br>Don't let anyone else see.</p>
+      <div id="dealimg" style="display:none"></div>
+      <p id="dealsub">Tap the button below when nobody else can see the screen.</p>
+      <div class="hintbox" id="dealhint" style="display:none"></div>
+      <div class="countdown" id="countdown" style="display:none"><i></i></div>
     </div>
-    <button class="btn primary" id="holdbtn">Hold to reveal</button>
+    <button class="btn primary" id="revealbtn">Reveal my role</button>
     <button class="btn" id="nextplayer" style="display:none">Hide &amp; pass on →</button>
   </section>
 
@@ -247,7 +294,8 @@ summary{font-weight:700;cursor:pointer}
   <section class="screen" id="s-result">
     <div class="banner" id="banner">Crew win!</div>
     <div class="card center">
-      <div class="tag">The secret word was</div>
+      <div class="tag" id="rlabel">The secret word was</div>
+      <div id="rimg"></div>
       <div class="word" id="rword">Pizza</div>
       <div class="muted" id="rcat">Food &amp; Drink</div>
     </div>
@@ -270,6 +318,24 @@ summary{font-weight:700;cursor:pointer}
     <div class="card stack"><div id="scorelist2"></div></div>
     <div class="grow"></div>
     <button class="btn ghost danger" id="clearscores">Reset scores</button>
+  </section>
+
+  <!-- ============ GIF PACK ============ -->
+  <section class="screen" id="s-gifs">
+    <div class="top"><button class="back" id="gifback">‹ Back</button><h2>GIF pack</h2><span style="width:56px"></span></div>
+    <p class="muted">Your own GIFs, stored on this phone. Added once, they work offline forever. Each one needs a tag — that's what the imposter may be given instead of the picture.</p>
+    <div class="stack">
+      <label class="btn primary" for="giffile">Add from this phone</label>
+      <input type="file" id="giffile" accept="image/gif,image/webp,image/png,image/jpeg" multiple hidden>
+      <div class="row">
+        <input type="text" id="gifurl" placeholder="…or paste a GIF URL" inputmode="url">
+        <button class="btn sm" id="gifadd">Add</button>
+      </div>
+      <p class="muted" id="gifmsg"></p>
+    </div>
+    <div class="row" style="justify-content:space-between"><h3 id="gifstats">0 GIFs</h3><button class="btn sm ghost danger" id="gifclear">Remove all</button></div>
+    <div class="gifgrid" id="gifgrid"></div>
+    <div class="empty" id="gifempty">Nothing here yet.<br>Save a few GIFs to your camera roll, then add them.</div>
   </section>
 
   <!-- ============ RULES ============ -->
@@ -299,9 +365,18 @@ summary{font-weight:700;cursor:pointer}
     <div class="card stack">
       <h3>Modes</h3>
       <ul>
-        <li><b>Classic.</b> Imposter is told they're the imposter and sees the category as a hint.</li>
-        <li><b>Blackout.</b> Imposter gets nothing at all. Brutal.</li>
+        <li><b>Classic.</b> Crew share a secret word. The imposter is told they're the imposter.</li>
         <li><b>Undercover.</b> Everyone gets a word, but the imposter's word is subtly different — and nobody is told who's who. You have to work out whether the odd one out is you.</li>
+        <li><b>GIF.</b> Crew see an animated GIF from your own pack and give clues about the picture. The imposter gets its tag, or nothing at all.</li>
+      </ul>
+    </div>
+    <div class="card stack">
+      <h3>What the imposter gets</h3>
+      <ul>
+        <li><b>Nothing.</b> Brutal. Pure improvisation off other people's clues.</li>
+        <li><b>Category.</b> The standard game — enough of a foothold to bluff.</li>
+        <li><b>Vague clue.</b> The shape of the answer only: how many words, how many letters.</li>
+        <li><b>Shortlist.</b> Four possibilities, one of them right. Generous — good with kids.</li>
       </ul>
     </div>
     <div class="card stack">
@@ -310,7 +385,9 @@ summary{font-weight:700;cursor:pointer}
     </div>
     <div class="card stack">
       <h3>How many imposters</h3>
-      <ul><li>3–5 players: 1</li><li>6–8 players: 1–2</li><li>9+ players: 2–3</li></ul>
+      <p>The usual: 3–5 players → 1, 6–8 → 1 or 2, 9+ → 2 or 3.</p>
+      <p style="margin-top:8px">But you can set anything from <b>none</b> to <b>everyone</b>. Zero is a real round — the crew win by refusing to convict, and lose the moment they turn on one of their own. Everyone-an-imposter means nobody knows the word and the whole table is bluffing at once.</p>
+      <p style="margin-top:8px">Turn on <b>Secret number</b> and the app rolls it fresh each round without telling you, so "is there even an imposter?" becomes a live question.</p>
     </div>
   </section>
 
@@ -345,28 +422,100 @@ const WORDS = {
 };
 
 const MODE_DESC = {
-  classic:"Imposter knows they're the imposter and sees the category. The standard game.",
-  blank:"Imposter gets no word and no hint. Pure improvisation — hardest mode for the faker.",
-  similar:"Everyone gets a word, but the imposter's is subtly different — and nobody is told who they are. Paranoia mode."
+  classic:"Crew share a secret word. The imposter is told they're the imposter.",
+  similar:"Everyone gets a word, but the imposter's is subtly different — and nobody is told who they are. Paranoia mode.",
+  gif:"Crew see a GIF from your own pack and give clues about the picture. The imposter gets its tag, or nothing."
 };
+const HINT_DESC = {
+  none:"Nothing at all. Brutal — the imposter improvises off whatever the crew say.",
+  category:"The category only. The standard game.",
+  vague:"The shape of the answer: how many words, how many letters.",
+  shortlist:"Four possibilities, one of them right. Generous — good with kids."
+};
+
+/* ------------------------------------------------------------------ *
+ *  GIF PACK — blobs in IndexedDB, so a pack added once works offline
+ *  forever. IndexedDB is unavailable on file:// in some browsers; that
+ *  is detected and reported rather than failing silently.
+ * ------------------------------------------------------------------ */
+const DB = {
+  db:null,
+  open(){
+    return new Promise((res,rej)=>{
+      if(DB.db) return res(DB.db);
+      let r;
+      try{ r = indexedDB.open("imposter",1); }catch(e){ return rej(e); }
+      r.onupgradeneeded=()=>{ r.result.createObjectStore("gifs",{keyPath:"id"}); };
+      r.onsuccess=()=>{ DB.db=r.result; res(DB.db); };
+      r.onerror=()=>rej(r.error||new Error("indexeddb blocked"));
+    });
+  },
+  tx(mode,fn){
+    return DB.open().then(db=>new Promise((res,rej)=>{
+      const t=db.transaction("gifs",mode), req=fn(t.objectStore("gifs"));
+      t.oncomplete=()=>res(req && req.result);
+      t.onerror=()=>rej(t.error);
+      t.onabort=()=>rej(t.error);
+    }));
+  },
+  all(){   return DB.tx("readonly",  s=>s.getAll()); },
+  put(rec){return DB.tx("readwrite", s=>s.put(rec)); },
+  del(id){ return DB.tx("readwrite", s=>s.delete(id)); },
+  clear(){ return DB.tx("readwrite", s=>s.clear()); }
+};
+
+let GIFS = [];                 // in-memory mirror of the pack
+let dbBlocked = false;
+const urls = new Map();        // id -> object URL
+
+function gifUrl(g){
+  if(!urls.has(g.id)) urls.set(g.id, URL.createObjectURL(g.blob));
+  return urls.get(g.id);
+}
+function dropUrl(id){
+  if(urls.has(id)){ URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
+}
+function loadGifs(){
+  return DB.all().then(rows=>{
+    GIFS = rows.sort((a,b)=>a.added-b.added);
+    dbBlocked = false;
+  }).catch(()=>{ GIFS=[]; dbBlocked=true; });
+}
 
 /* ------------------------------------------------------------------ *
  *  STATE
  * ------------------------------------------------------------------ */
 const KEY = "imposter.v1";
-const S = Object.assign({
+const S = migrate(Object.assign({
   players:["Player 1","Player 2","Player 3","Player 4"],
   imposters:1,
+  randomImps:false,
   mode:"classic",
+  hint:"category",
   cats:Object.keys(WORDS),
-  opt:{hint:true,timer:true,shuffle:true,score:true},
+  opt:{timer:true,shuffle:true,score:true,autohide:true},
   seconds:90,
+  hold:8,
   scores:{},
-  used:[]
-}, load());
+  used:[],
+  usedGifs:[]
+}, load()));
 
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+/* Older saved settings used a "blank" mode and a boolean hint. */
+function migrate(s){
+  if(s.mode==="blank"){ s.mode="classic"; s.hint="none"; }
+  if(s.opt && typeof s.opt.hint==="boolean"){
+    if(s.hint===undefined || s.hint==="category") s.hint = s.opt.hint ? "category" : "none";
+    delete s.opt.hint;
+  }
+  if(s.opt && s.opt.autohide===undefined) s.opt.autohide=true;
+  if(!HINT_DESC[s.hint]) s.hint="category";
+  if(!MODE_DESC[s.mode]) s.mode="classic";
+  return s;
+}
 
 let R = null;   // current round
 let tick = null, left = 0;
@@ -379,12 +528,20 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 const rnd = n => Math.floor(Math.random()*n);
 const pick = a => a[rnd(a.length)];
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];} return a; }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function plural(n,w){ return n+" "+w+(n===1?"":"s"); }
 
 function go(name){
   $$(".screen").forEach(s=>s.classList.toggle("on", s.id==="s-"+name));
   window.scrollTo(0,0);
 }
-$$("[data-go]").forEach(b=>b.onclick=()=>{ const t=b.dataset.go; if(t==="setup")renderSetup(); if(t==="scores")renderScores("#scorelist2"); go(t); });
+$$("[data-go]").forEach(b=>b.onclick=()=>{
+  const t=b.dataset.go;
+  if(t==="setup")  renderSetup();
+  if(t==="scores") renderScores("#scorelist2");
+  if(t==="gifs")   renderGifs();
+  go(t);
+});
 
 function beep(){
   try{
@@ -411,11 +568,9 @@ document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==
 /* ------------------------------------------------------------------ *
  *  SETUP SCREEN
  * ------------------------------------------------------------------ */
-function maxImposters(){ return Math.max(1, Math.min(3, Math.floor((S.players.length-1)/2))); }
-
 function renderSetup(){
   $("#pval").textContent = S.players.length;
-  $("#pcount").textContent = S.players.length + " players";
+  $("#pcount").textContent = plural(S.players.length,"player");
   const list = $("#plist"); list.innerHTML = "";
   S.players.forEach((n,i)=>{
     const row=document.createElement("div"); row.className="prow";
@@ -428,12 +583,41 @@ function renderSetup(){
     row.append(num,inp,x); list.append(row);
   });
 
-  S.imposters = Math.min(S.imposters, maxImposters());
-  $("#ival").textContent = S.imposters;
-  $("#imphint").textContent = S.imposters===1 ? "1 imposter" : S.imposters+" imposters";
+  clampImposters();
+  $("#ival").textContent = S.randomImps ? "?" : S.imposters;
+  $("#iminus").disabled = $("#iplus").disabled = S.randomImps;
+  $("#imphint").textContent =
+    S.randomImps                   ? "Rolled in secret each round"
+    : S.imposters===0              ? "Nobody is faking it"
+    : S.imposters===S.players.length ? "Everybody is faking it"
+    : plural(S.imposters,"imposter");
+
+  const warn=$("#impwarn");
+  let w="";
+  if(!S.randomImps && S.imposters>0 && S.imposters*2>=S.players.length && S.imposters<S.players.length)
+    w="That's a lot of imposters for "+S.players.length+" players — the crew will struggle.";
+  if(!S.randomImps && S.imposters===0)
+    w="Zero imposters: the crew win by voting nobody out, and lose if they convict anyone.";
+  if(!S.randomImps && S.imposters===S.players.length)
+    w="Everyone's an imposter: nobody gets the word, and you all guess it together at the end.";
+  warn.textContent=w; warn.style.display=w?"block":"none";
 
   $$("#modes .pill").forEach(p=>p.classList.toggle("on", p.dataset.mode===S.mode));
   $("#modedesc").textContent = MODE_DESC[S.mode];
+
+  const isGif = S.mode==="gif", isUnder = S.mode==="similar";
+  $("#catblock").style.display = isGif ? "none" : "flex";
+  $("#gifblock").style.display = isGif ? "flex" : "none";
+  $("#gifcount").textContent = dbBlocked
+    ? "Storage is blocked when the page is opened as a file — install the app or serve it over http to use GIF mode."
+    : GIFS.length ? plural(GIFS.length,"GIF")+" in your pack." : "No GIFs yet — add a few.";
+
+  // Undercover never shows a hint: the imposter isn't told they are one.
+  $("#hinthead").parentElement.style.display = isUnder ? "none" : "flex";
+  $$("#hints .pill").forEach(p=>p.classList.toggle("on", p.dataset.hint===S.hint));
+  $("#hintdesc").textContent = isGif && S.hint==="category"
+    ? "The GIF's tag, and nothing else."
+    : HINT_DESC[S.hint];
 
   const cats=$("#cats"); cats.innerHTML="";
   Object.keys(WORDS).forEach(c=>{
@@ -446,24 +630,111 @@ function renderSetup(){
     cats.append(b);
   });
 
-  $$("[data-opt]").forEach(t=>t.classList.toggle("on", !!S.opt[t.dataset.opt]));
+  $$("[data-opt]").forEach(t=>t.classList.toggle("on", t.dataset.opt==="randomImps" ? !!S.randomImps : !!S.opt[t.dataset.opt]));
   $$("[data-sec]").forEach(p=>p.classList.toggle("on", +p.dataset.sec===S.seconds));
+  $$("[data-hold]").forEach(p=>p.classList.toggle("on", +p.dataset.hold===S.hold));
   $("#timerlabel").textContent = S.seconds<60 ? S.seconds+" seconds" : (S.seconds/60)+" minute"+(S.seconds>60?"s":"");
   $("#timerrow").style.display = S.opt.timer ? "flex" : "none";
-  $("#start").disabled = S.cats.length===0;
-  $("#start").textContent = S.cats.length===0 ? "Pick at least one category" : "Deal roles";
+  $("#holdlabel").textContent = S.opt.autohide
+    ? "Hides itself "+S.hold+" seconds after you reveal it"
+    : "Stays up until you tap Hide";
+  $("#holdrow").style.display = S.opt.autohide ? "flex" : "none";
+
+  const blocked = isGif ? (GIFS.length===0) : (S.cats.length===0);
+  $("#start").disabled = blocked;
+  $("#start").textContent = !blocked ? "Deal roles"
+    : isGif ? "Add some GIFs first" : "Pick at least one category";
 }
-function clampImposters(){ S.imposters = Math.max(1, Math.min(S.imposters, maxImposters())); }
+
+function clampImposters(){ S.imposters = Math.max(0, Math.min(S.imposters, S.players.length)); }
 
 $("#pplus").onclick=()=>{ if(S.players.length<20){ S.players.push("Player "+(S.players.length+1)); save(); renderSetup(); } };
 $("#pminus").onclick=()=>{ if(S.players.length>3){ S.players.pop(); clampImposters(); save(); renderSetup(); } };
-$("#iplus").onclick=()=>{ if(S.imposters<maxImposters()){ S.imposters++; save(); renderSetup(); } };
-$("#iminus").onclick=()=>{ if(S.imposters>1){ S.imposters--; save(); renderSetup(); } };
+$("#iplus").onclick=()=>{ if(S.imposters<S.players.length){ S.imposters++; save(); renderSetup(); } };
+$("#iminus").onclick=()=>{ if(S.imposters>0){ S.imposters--; save(); renderSetup(); } };
 $("#modes").onclick=e=>{ const b=e.target.closest("[data-mode]"); if(b){ S.mode=b.dataset.mode; save(); renderSetup(); } };
+$("#hints").onclick=e=>{ const b=e.target.closest("[data-hint]"); if(b){ S.hint=b.dataset.hint; save(); renderSetup(); } };
 $("#catall").onclick=()=>{ S.cats=Object.keys(WORDS); save(); renderSetup(); };
 $("#catnone").onclick=()=>{ S.cats=[]; save(); renderSetup(); };
-$$("[data-opt]").forEach(t=>t.onclick=()=>{ S.opt[t.dataset.opt]=!S.opt[t.dataset.opt]; save(); renderSetup(); });
+$$("[data-opt]").forEach(t=>t.onclick=()=>{
+  const k=t.dataset.opt;
+  if(k==="randomImps") S.randomImps=!S.randomImps; else S.opt[k]=!S.opt[k];
+  save(); renderSetup();
+});
 $$("[data-sec]").forEach(p=>p.onclick=()=>{ S.seconds=+p.dataset.sec; save(); renderSetup(); });
+$$("[data-hold]").forEach(p=>p.onclick=()=>{ S.hold=+p.dataset.hold; save(); renderSetup(); });
+
+/* ------------------------------------------------------------------ *
+ *  GIF PACK SCREEN
+ * ------------------------------------------------------------------ */
+function tagFromName(name){
+  return name.replace(/\.[a-z0-9]+$/i,"").replace(/[-_]+/g," ")
+             .replace(/\s+/g," ").trim().slice(0,40) || "untagged";
+}
+function gifMsg(text,bad){
+  const m=$("#gifmsg"); m.textContent=text||""; m.className = bad?"warn":"muted";
+}
+function renderGifs(){
+  const grid=$("#gifgrid"); grid.innerHTML="";
+  $("#gifempty").style.display = GIFS.length ? "none" : "block";
+  if(dbBlocked){
+    $("#gifempty").innerHTML = "Your browser won't let this page store files when it's opened directly from disk.<br>Install the app (or serve it over http) and GIF mode will work.";
+    $("#gifempty").style.display="block";
+  }
+  const bytes = GIFS.reduce((n,g)=>n+(g.blob.size||0),0);
+  const size = bytes < 1048576 ? Math.max(1,Math.round(bytes/1024))+" KB" : (bytes/1048576).toFixed(1)+" MB";
+  $("#gifstats").textContent = plural(GIFS.length,"GIF") + (bytes ? " · "+size : "");
+  GIFS.forEach(g=>{
+    const cell=document.createElement("div"); cell.className="gifcell";
+    const img=document.createElement("img"); img.src=gifUrl(g); img.alt=g.tag; img.loading="lazy";
+    const meta=document.createElement("div"); meta.className="meta";
+    const inp=document.createElement("input"); inp.type="text"; inp.value=g.tag; inp.maxLength=40;
+    inp.oninput=()=>{ g.tag=inp.value.trim()||"untagged"; DB.put(g).catch(()=>{}); };
+    const del=document.createElement("button"); del.className="del"; del.textContent="×";
+    del.onclick=()=>{
+      DB.del(g.id).then(()=>{ dropUrl(g.id); GIFS=GIFS.filter(x=>x.id!==g.id); renderGifs(); }).catch(()=>gifMsg("Couldn't delete that one.",true));
+    };
+    meta.append(inp,del); cell.append(img,meta); grid.append(cell);
+  });
+}
+
+function addGif(blob,tag){
+  if(!/^image\//.test(blob.type||"")) return Promise.reject(new Error("not an image"));
+  if(blob.size > 12*1024*1024) return Promise.reject(new Error("too big"));
+  const rec={ id:"g"+Date.now()+"-"+rnd(1e6), tag:tag||"untagged", blob, added:Date.now() };
+  return DB.put(rec).then(()=>{ GIFS.push(rec); });
+}
+
+$("#giffile").onchange=e=>{
+  const files=Array.from(e.target.files||[]);
+  if(!files.length) return;
+  gifMsg("Adding "+plural(files.length,"file")+"…");
+  files.reduce((p,f)=>p.then(()=>addGif(f,tagFromName(f.name)).catch(err=>{
+    gifMsg("Skipped "+f.name+" ("+err.message+")",true);
+  })), Promise.resolve()).then(()=>{
+    e.target.value="";
+    if(!$("#gifmsg").classList.contains("warn")) gifMsg("Added. Tap a tag to rename it.");
+    renderGifs(); save();
+  });
+};
+
+$("#gifadd").onclick=()=>{
+  const url=$("#gifurl").value.trim();
+  if(!url) return;
+  gifMsg("Fetching…");
+  fetch(url,{mode:"cors"})
+    .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.blob(); })
+    .then(b=>addGif(b, tagFromName(url.split("/").pop().split("?")[0])))
+    .then(()=>{ $("#gifurl").value=""; gifMsg("Added, and stored on this phone."); renderGifs(); })
+    .catch(()=>gifMsg("Couldn't fetch that URL — many sites block it. Save the GIF to your phone and use Add from this phone instead.",true));
+};
+
+$("#gifclear").onclick=()=>{
+  if(!GIFS.length) return;
+  DB.clear().then(()=>{ GIFS.forEach(g=>dropUrl(g.id)); GIFS=[]; S.usedGifs=[]; save(); renderGifs(); })
+            .catch(()=>gifMsg("Couldn't clear the pack.",true));
+};
+$("#gifback").onclick=()=>{ renderSetup(); go("setup"); };
 
 /* ------------------------------------------------------------------ *
  *  ROUND SET-UP
@@ -476,80 +747,187 @@ function drawWord(){
   const [cat,word]=pick(fresh);
   S.used.push(cat+"|"+word);
   if(S.used.length>400) S.used=S.used.slice(-200);
-  save();
   return {cat,word};
 }
 
+function drawGif(){
+  let fresh = GIFS.filter(g=> !S.usedGifs.includes(g.id));
+  if(!fresh.length){ S.usedGifs=[]; fresh=GIFS; }
+  const g=pick(fresh);
+  S.usedGifs.push(g.id);
+  if(S.usedGifs.length>200) S.usedGifs=S.usedGifs.slice(-100);
+  return g;
+}
+
+/* Weighted so "secret number" stays playable: usually one, sometimes
+   none, occasionally a pair, rarely the whole table. */
+function secretCount(n){
+  const table=[[0,15],[1,45],[2,22],[3,10],[n,8]];
+  const opts=table.filter(([k])=>k<=n);
+  let total=opts.reduce((t,[,w])=>t+w,0), r=Math.random()*total;
+  for(const [k,w] of opts){ if((r-=w)<=0) return k; }
+  return 1;
+}
+
 function startRound(){
-  const {cat,word}=drawWord();
-  const idx=shuffle(S.players.map((_,i)=>i)).slice(0,S.imposters);
-  let decoy=null;
-  if(S.mode==="similar"){
-    const others=WORDS[cat].filter(w=>w!==word);
-    decoy = others.length ? pick(others) : word;
+  const n=S.players.length;
+  const count = S.randomImps ? secretCount(n) : Math.min(S.imposters,n);
+  const imps = shuffle(S.players.map((_,i)=>i)).slice(0,count);
+
+  R={ mode:S.mode, imps, count,
+      order:S.opt.shuffle?shuffle(S.players.map((_,i)=>i)):S.players.map((_,i)=>i),
+      seat:0, out:[], caught:0, winner:null,
+      word:null, cat:null, decoy:null, gif:null };
+
+  if(S.mode==="gif"){
+    R.gif=drawGif(); R.word=R.gif.tag; R.cat="GIF";
+  }else{
+    const d=drawWord(); R.word=d.word; R.cat=d.cat;
+    if(S.mode==="similar"){
+      const others=WORDS[R.cat].filter(w=>w!==R.word);
+      R.decoy = others.length ? pick(others) : R.word;
+    }
   }
-  R={ word, cat, decoy, imps:idx, order:S.opt.shuffle?shuffle(S.players.map((_,i)=>i)):S.players.map((_,i)=>i),
-      seat:0, out:[], caught:0, winner:null };
+  save();
   renderDeal();
   go("deal");
 }
 $("#start").onclick=startRound;
 
 /* ------------------------------------------------------------------ *
- *  DEAL / REVEAL
+ *  WHAT THE IMPOSTER IS TOLD
  * ------------------------------------------------------------------ */
+function hintHTML(){
+  const answer=R.word;
+  if(S.hint==="none") return "";
+  if(S.hint==="category")
+    return R.mode==="gif" ? "Tag: <b>"+esc(answer)+"</b>" : "Category: <b>"+esc(R.cat)+"</b>";
+  if(S.hint==="vague"){
+    const words=answer.trim().split(/\s+/).length;
+    const letters=answer.replace(/[^a-z]/gi,"").length;
+    return "<b>"+plural(words,"word")+"</b> · <b>"+plural(letters,"letter")+"</b>";
+  }
+  // shortlist: the answer hidden among three decoys
+  let others = R.mode==="gif"
+    ? GIFS.filter(g=>g.id!==R.gif.id).map(g=>g.tag)
+    : WORDS[R.cat].filter(w=>w!==answer);
+  others = shuffle(Array.from(new Set(others))).slice(0,3);
+  return "One of these: <b>"+shuffle(others.concat(answer)).map(esc).join(" · ")+"</b>";
+}
+
+/* ------------------------------------------------------------------ *
+ *  DEAL / REVEAL
+ *  Tap to reveal, then either tap Hide or let the countdown do it.
+ *  No long-press: it fought the OS text-selection gesture, and a brief
+ *  press meant you could blink and miss your own role.
+ * ------------------------------------------------------------------ */
+let revealed=false, raf=null, hideAt=0;
+
 function renderDeal(){
+  revealed=false;
+  cancelAnimationFrame(raf);
   const card=$("#revealcard");
   card.className="reveal";
   $("#dealbar").style.width = (R.seat/S.players.length*100)+"%";
   $("#dealtag").textContent = R.seat===0 ? "Phone starts with" : "Pass the phone to";
   $("#dealname").textContent = S.players[R.seat];
   $("#dealname").className = "big";
-  $("#dealsub").innerHTML = "Hold the button below when nobody's looking.";
-  $("#holdbtn").style.display="flex";
+  $("#dealname").style.display="block";
+  $("#dealsub").textContent = "Tap below when nobody else can see the screen.";
+  $("#dealsub").style.display="block";
+  $("#dealimg").style.display="none"; $("#dealimg").innerHTML="";
+  $("#dealhint").style.display="none";
+  $("#countdown").style.display="none";
+  $("#secs").style.display="none";
+  const b=$("#revealbtn");
+  b.style.display="flex"; b.disabled=false; b.textContent="Reveal my role";
   $("#nextplayer").style.display="none";
 }
 
 function showRole(){
   const i=R.seat, isImp=R.imps.includes(i), card=$("#revealcard");
+  const name=$("#dealname"), sub=$("#dealsub"), hint=$("#dealhint"), img=$("#dealimg");
   card.classList.add("held");
   $("#dealtag").textContent = S.players[i];
-  const name=$("#dealname"), sub=$("#dealsub");
-  if(S.mode==="similar"){
-    name.className="word"; name.textContent = isImp ? R.decoy : R.word;
+  hint.style.display="none";
+  img.style.display="none"; img.innerHTML="";
+
+  if(R.mode==="similar"){
     card.classList.remove("imp");
-    sub.textContent = "Someone in this room has a different word. It might be you.";
+    name.className="word"; name.textContent = isImp ? R.decoy : R.word;
+    sub.textContent = "Someone in this room may have a different word. It might be you.";
   } else if(isImp){
     card.classList.add("imp");
     name.className="big"; name.textContent="YOU ARE THE IMPOSTER";
-    sub.innerHTML = S.mode==="classic" && S.opt.hint
-      ? "Category: <b>"+R.cat+"</b><br>Bluff a clue. Work out the word."
-      : "No word. No hint. Good luck.";
+    const h=hintHTML();
+    if(h){ hint.innerHTML=h; hint.style.display="block"; }
+    sub.textContent = R.mode==="gif"
+      ? "You don't get to see the GIF. Bluff a clue."
+      : "Bluff a clue. Work out the word.";
   } else {
     card.classList.remove("imp");
-    name.className="word"; name.textContent=R.word;
-    sub.textContent = S.imposters===1 ? "One of you doesn't know this." : S.imposters+" of you don't know this.";
+    if(R.mode==="gif"){
+      name.style.display="none";
+      const el=document.createElement("img");
+      el.src=gifUrl(R.gif); el.alt="";
+      img.innerHTML=""; img.append(el); img.style.display="block";
+    }else{
+      name.className="word"; name.textContent=R.word;
+    }
+    sub.textContent = crewSubtitle();
   }
+  revealed=true;
+  const b=$("#revealbtn");
+  b.textContent="Hide it"; b.disabled=true;
+  setTimeout(()=>{ if(revealed) b.disabled=false; }, 600);   // no accidental double-tap
+  if(S.opt.autohide) startCountdown(S.hold);
+  buzz(12);
 }
+
+/* Never leak the imposter count when it's meant to be a secret. */
+function crewSubtitle(){
+  const what = R.mode==="gif" ? "seen this" : "know this";
+  if(S.randomImps || R.count===0) return "Someone here might not have "+what+". Or nobody. Or everyone.";
+  if(R.count===1) return "One of you hasn't "+what+".";
+  return R.count+" of you haven't "+what+".";
+}
+
+function startCountdown(sec){
+  const bar=$("#countdown"), fill=bar.firstElementChild, num=$("#secs");
+  bar.style.display="block"; num.style.display="block";
+  hideAt=performance.now()+sec*1000;
+  cancelAnimationFrame(raf);
+  const step=now=>{
+    const p=Math.max(0,(hideAt-now)/(sec*1000));
+    fill.style.transform="scaleX("+p+")";
+    num.textContent=Math.ceil(p*sec);
+    if(p<=0){ buzz(20); hideRole(); } else raf=requestAnimationFrame(step);
+  };
+  raf=requestAnimationFrame(step);
+}
+
 function hideRole(){
+  cancelAnimationFrame(raf);
+  revealed=false;
   const card=$("#revealcard");
   card.classList.remove("held","imp");
   $("#dealtag").textContent="Seen it?";
   $("#dealname").className="big"; $("#dealname").textContent=S.players[R.seat];
+  $("#dealname").style.display="block";
   $("#dealsub").textContent="Hidden. Pass the phone on.";
-  $("#holdbtn").style.display="none";
-  $("#nextplayer").style.display="flex";
-  $("#nextplayer").textContent = R.seat < S.players.length-1
+  $("#dealimg").style.display="none"; $("#dealimg").innerHTML="";
+  $("#dealhint").style.display="none";
+  $("#countdown").style.display="none";
+  $("#secs").style.display="none";
+  $("#revealbtn").style.display="none";
+  const nx=$("#nextplayer");
+  nx.style.display="flex";
+  nx.textContent = R.seat < S.players.length-1
     ? "Pass to "+S.players[R.seat+1]+" →" : "Everyone's ready →";
 }
 
-const hold=$("#holdbtn");
-let holding=false;
-function down(e){ e.preventDefault(); if(holding) return; holding=true; buzz(15); showRole(); }
-function up(){ if(!holding) return; holding=false; hideRole(); }
-hold.addEventListener("pointerdown",down);
-["pointerup","pointercancel","pointerleave"].forEach(ev=>hold.addEventListener(ev,up));
-hold.addEventListener("contextmenu",e=>e.preventDefault());
+$("#revealbtn").onclick=()=>{ revealed ? hideRole() : showRole(); };
+$("#dealcancel").onclick=()=>{ cancelAnimationFrame(raf); revealed=false; renderSetup(); go("setup"); };
 
 $("#nextplayer").onclick=()=>{
   R.seat++;
@@ -608,56 +986,76 @@ function renderVote(){
     b.onclick=()=>voteOut(i);
     g.append(b);
   });
-  const left=R.imps.length-R.caught;
-  $("#votehint").textContent = R.out.length===0
-    ? "Count votes out loud, then tap whoever got the most."
-    : (left>1 ? left+" imposters still among you. Vote again." : "One imposter still among you. Vote again.");
+  const remaining=R.imps.length-R.caught;
+  $("#votehint").textContent =
+    R.out.length===0 ? "Count votes out loud, then tap whoever got the most."
+    : S.randomImps   ? "Caught one — but they weren't working alone. Vote again."
+    : remaining>1    ? plural(remaining,"imposter")+" still among you. Vote again."
+    :                  "One imposter still among you. Vote again.";
 }
 
 function voteOut(i){
   R.out.push(i);
-  if(R.imps.includes(i)){
-    R.caught++;
-    if(R.caught===R.imps.length){
-      if(S.mode==="similar"){ finish("crew"); }       // no word to guess — imposter had one
-      else {
-        $("#guesstitle").textContent = R.imps.length>1 ? "All imposters caught!" : "Caught!";
-        $("#guesssub").textContent = "Last chance: the imposter says the secret word out loud now. Guess it right and they steal the win.";
-        go("guess");
-      }
-    } else {
-      renderVote();   // right call, but there's another one
-    }
-  } else {
-    finish("imp");    // civilian voted out — imposters survive
-  }
+  if(R.imps.length===0){ finish("none"); return; }              // there was nobody to catch
+  if(R.imps.length===S.players.length){ toGuess(); return; }     // everyone was faking
+  if(!R.imps.includes(i)){ finish("imp"); return; }              // convicted a crew member
+  R.caught++;
+  if(R.caught<R.imps.length){ renderVote(); return; }
+  if(R.mode==="similar") finish("crew");                         // imposter had a word — no guess
+  else toGuess();
 }
-$("#novote").onclick=()=>finish("imp");
+
+function toGuess(){
+  const all = R.imps.length===S.players.length;
+  const what = R.mode==="gif" ? "what the GIF was" : "the secret word";
+  $("#guesstitle").textContent = all ? "Nobody knew!" : R.imps.length>1 ? "All imposters caught!" : "Caught!";
+  $("#guesssub").textContent = all
+    ? "There was no crew — every one of you was an imposter. Between you, say "+what+" now. Get it and you all win."
+    : "Last chance: the imposter says "+what+" out loud now. Get it right and they steal the win.";
+  go("guess");
+}
+
+$("#novote").onclick=()=>finish(R.imps.length===0 ? "crew" : "imp");
 $("#gright").onclick=()=>finish("imp",true);
-$("#gwrong").onclick=()=>finish("crew");
+$("#gwrong").onclick=()=>finish(R.imps.length===S.players.length ? "none" : "crew");
 
 /* ------------------------------------------------------------------ *
  *  RESULT
  * ------------------------------------------------------------------ */
 function finish(winner,stolen){
   R.winner=winner;
-  if(S.opt.score){
+  if(S.opt.score && winner!=="none"){
     S.players.forEach((n,i)=>{
       const isImp=R.imps.includes(i);
       if((winner==="imp")===isImp) S.scores[n]=(S.scores[n]||0)+1;
     });
     save();
   }
+
+  const none=R.imps.length===0, all=R.imps.length===S.players.length;
   const b=$("#banner");
   b.className="banner "+(winner==="crew"?"crew":"imp");
-  b.textContent = winner==="crew"
-    ? "Crew win! 🎉"
-    : stolen ? "Imposter guessed the word! 😱"
+  b.textContent =
+      winner==="crew" && none ? "There was no imposter — and you knew it! 🎉"
+    : winner==="crew"         ? "Crew win! 🎉"
+    : winner==="none" && none ? "There was no imposter 😬 You turned on your own."
+    : winner==="none"         ? "Nobody knew the word 🤷"
+    : stolen && all           ? "Every one of you was faking — and you still got it! 😱"
+    : stolen                  ? "Imposter guessed the word! 😱"
+    : all                     ? "Everyone was an imposter 🔪"
     : R.out.length && !R.imps.includes(R.out[R.out.length-1]) ? "Imposter wins — wrong person! 🔪"
-    : "Imposter survives! 🔪";
+    :                           "Imposter survives! 🔪";
 
+  const isGif=R.mode==="gif";
+  $("#rlabel").textContent = isGif ? "The GIF was" : "The secret word was";
+  const ri=$("#rimg"); ri.innerHTML="";
+  if(isGif){
+    const el=document.createElement("img"); el.src=gifUrl(R.gif); el.alt="";
+    el.style.maxWidth="100%"; el.style.maxHeight="34vh"; el.style.borderRadius="14px";
+    ri.append(el);
+  }
   $("#rword").textContent = R.word;
-  $("#rcat").textContent  = R.cat + (S.mode==="similar" ? " · imposter had “"+R.decoy+"”" : "");
+  $("#rcat").textContent  = isGif ? "" : R.cat + (R.mode==="similar" && R.decoy ? " · imposter had “"+R.decoy+"”" : "");
 
   const rl=$("#roles"); rl.innerHTML="";
   S.players.forEach((n,i)=>{
@@ -673,7 +1071,6 @@ function finish(winner,stolen){
   keepAwake(false);
   go("result");
 }
-function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
 function renderScores(sel){
   const el=$(sel); el.innerHTML="";
@@ -692,6 +1089,7 @@ $("#clearscores").onclick=()=>{ S.scores={}; save(); renderScores("#scorelist2")
  *  BOOT
  * ------------------------------------------------------------------ */
 renderSetup();
+loadGifs().then(renderSetup);
 if(location.protocol.startsWith("http") && "serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js").catch(()=>{});
 }
